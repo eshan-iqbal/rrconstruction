@@ -1,26 +1,533 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --color-brand-black: #09090b;
+  --color-brand-surface: #121215;
+  --color-brand-surface-elevated: #18181b;
+  --color-brand-border: #27272a;
+  --color-brand-border-subtle: #1e1e24;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card-bg: #121215;
+  --border-color: #27272a;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.light {
+  --color-brand-black: #242830;
+  --color-brand-surface: #ffffff;
+  --color-brand-surface-elevated: #f4efe6;
+  --color-brand-border: #e4ded4;
+  --color-brand-border-subtle: #eee8de;
+  --background: #f7f4ee;
+  --foreground: #22262e;
+  --card-bg: #ffffff;
+  --border-color: #e4ded4;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #09090b;
+  color: #f4f4f5;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  min-height: 100vh;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.light body,
+body.light {
+  background-color: #f7f4ee;
+  color: #22262e;
+}
+
+/* Premium Monochrome Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #f0ebe1;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #d4ccbf;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #968a78;
+}
+
+/* Background grid pattern */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.light .bg-grid-pattern {
+  background-image: radial-gradient(rgba(110, 95, 80, 0.09) 1px, transparent 1px);
+}
+
+/* Glassmorphism Card Style */
+.glass-panel {
+  background: rgba(18, 18, 21, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(140, 125, 110, 0.14);
+  box-shadow: 0 2px 6px rgba(100, 85, 70, 0.04);
+}
+
+.glass-panel-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(24, 24, 27, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.light .glass-panel-hover:hover {
+  background: #ffffff;
+  border-color: rgba(120, 105, 90, 0.28);
+  box-shadow: 0 6px 16px rgba(100, 85, 70, 0.08);
+}
+
+/* Light Mode Overrides for UI Elements - Warm Cream & Charcoal Grey */
+.light .bg-\[\#09090b\] {
+  background-color: #f7f4ee !important;
+}
+
+.light .bg-\[\#09090b\]\/95 {
+  background-color: rgba(247, 244, 238, 0.96) !important;
+}
+
+.light .bg-zinc-950 {
+  background-color: #ffffff !important;
+}
+
+.light .bg-zinc-950\/80 {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.light .bg-zinc-950\/95 {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.light .bg-zinc-900 {
+  background-color: #ffffff !important;
+}
+
+.light .bg-zinc-900\/90 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.light .bg-zinc-850 {
+  background-color: #f2ece2 !important;
+}
+
+.light .bg-zinc-850\/90 {
+  background-color: #f2ece2 !important;
+}
+
+.light .bg-zinc-800 {
+  background-color: #eae3d6 !important;
+}
+
+.light .bg-zinc-800\/80 {
+  background-color: #e5ded0 !important;
+}
+
+.light .border-zinc-850,
+.light .border-zinc-800,
+.light .border-zinc-700,
+.light .border-zinc-800\/80 {
+  border-color: #e4ded4 !important;
+}
+
+.light .border-zinc-800\/50,
+.light .border-zinc-800\/40 {
+  border-color: #eee8de !important;
+}
+
+/* Light Typography - Softer Charcoal Slate */
+.light .text-white,
+.light .text-zinc-100,
+.light .text-zinc-200 {
+  color: #22262e !important;
+}
+
+.light .text-zinc-300 {
+  color: #434956 !important;
+}
+
+.light .text-zinc-400 {
+  color: #697282 !important;
+}
+
+.light .text-zinc-500 {
+  color: #7d8696 !important;
+}
+
+.light .text-zinc-600 {
+  color: #9ea7b4 !important;
+}
+
+/* Light Mode Interactive Hover States */
+.light .hover\:bg-zinc-900:hover,
+.light .hover\:bg-zinc-850:hover,
+.light .hover\:bg-zinc-800:hover,
+.light .hover\:bg-zinc-900\/90:hover {
+  background-color: #ede5d8 !important;
+  color: #1e2229 !important;
+}
+
+.light .hover\:text-white:hover {
+  color: #111418 !important;
+}
+
+.light .hover\:border-zinc-700:hover,
+.light .hover\:border-zinc-700\/60:hover {
+  border-color: #dad0c0 !important;
+}
+
+/* Dedicated Sidebar Navigation Hover Styling */
+.light aside {
+  background-color: #faf7f2 !important;
+  border-color: #e4ded4 !important;
+}
+
+.light aside nav a:not(.bg-white) {
+  color: #5a6270 !important;
+}
+
+.light aside nav a:not(.bg-white):hover {
+  background-color: #ede5d8 !important;
+  border-color: #dad0c0 !important;
+  color: #1a1e24 !important;
+  box-shadow: 0 1px 3px rgba(90, 75, 60, 0.05);
+}
+
+.light aside nav a:not(.bg-white):hover svg {
+  color: #1a1e24 !important;
+}
+
+.light aside nav a:not(.bg-white):hover span {
+  color: #1a1e24 !important;
+}
+
+.light aside nav a.bg-white:hover {
+  background-color: #383e4a !important;
+  color: #ffffff !important;
+}
+
+.light .shadow-2xl {
+  box-shadow: 0 20px 25px -5px rgba(80, 65, 50, 0.08), 0 8px 10px -6px rgba(80, 65, 50, 0.05) !important;
+}
+
+/* Light Theme Primary Action Elements - Refined Charcoal Grey instead of Pitch Black */
+.light .bg-white.text-black {
+  background-color: #272b34 !important;
+  color: #ffffff !important;
+}
+
+.light .bg-white.text-black * {
+  color: #ffffff !important;
+}
+
+.light .bg-white.text-black .text-zinc-600,
+.light .bg-white.text-black .text-zinc-500,
+.light .bg-white.text-black .text-zinc-400 {
+  color: #cbd5e1 !important;
+}
+
+.light .bg-white.text-black .text-black {
+  color: #ffffff !important;
+}
+
+.light .bg-white.text-black:hover,
+.light .hover\:bg-zinc-200:hover {
+  background-color: #383e4a !important;
+  color: #ffffff !important;
+}
+
+.light .bg-black.text-white {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+/* Light Mode Table & Row Styles */
+.light thead tr,
+.light thead th {
+  background-color: #f2ece2 !important;
+  color: #434956 !important;
+  border-color: #e4ded4 !important;
+}
+
+.light tbody tr:hover {
+  background-color: #f5efe6 !important;
+}
+
+.light .divide-zinc-800\/70 > * + *,
+.light .divide-zinc-800 > * + * {
+  border-color: #e8e2d8 !important;
+}
+
+/* Light Theme Color Tints for Badges & Alerts */
+.light .bg-rose-950\/30,
+.light .bg-rose-950\/40,
+.light .bg-rose-950\/50,
+.light .bg-rose-950\/60 {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+}
+
+.light .bg-emerald-950\/30,
+.light .bg-emerald-950\/40,
+.light .bg-emerald-950\/50,
+.light .bg-emerald-950\/60 {
+  background-color: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+.light .bg-amber-950\/30,
+.light .bg-amber-950\/40,
+.light .bg-amber-950\/50,
+.light .bg-amber-950\/60 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+.light .bg-blue-950\/30,
+.light .bg-blue-950\/40,
+.light .bg-blue-950\/50 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+.light .bg-indigo-950\/30,
+.light .bg-indigo-950\/40 {
+  background-color: #eef2ff !important;
+  border-color: #c7d2fe !important;
+  color: #3730a3 !important;
+}
+
+/* Custom Executive Select & Dropdown Styling */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a1a1aa' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 0.95rem 0.95rem;
+  padding-right: 2.5rem !important;
+  cursor: pointer;
+  background-color: #09090b;
+  color: #f4f4f5;
+  border: 1px solid #27272a;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+select:hover {
+  border-color: #52525b;
+  background-color: #121215;
+}
+
+select:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 1px #ffffff;
+  background-color: #121215;
+}
+
+select option {
+  background-color: #121215;
+  color: #ffffff;
+  padding: 0.65rem;
+  font-size: 0.875rem;
+}
+
+select option:hover,
+select option:checked {
+  background-color: #27272a;
+  color: #ffffff;
+}
+
+.light select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23697282' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-color: #ffffff !important;
+  color: #22262e !important;
+  border: 1px solid #ded7cc !important;
+}
+
+.light select:hover {
+  border-color: #baa48b !important;
+  background-color: #faf7f2 !important;
+}
+
+.light select:focus {
+  border-color: #272b34 !important;
+  box-shadow: 0 0 0 1px #272b34 !important;
+  background-color: #ffffff !important;
+}
+
+.light select option {
+  background-color: #ffffff !important;
+  color: #22262e !important;
+}
+
+.light select option:hover,
+.light select option:checked {
+  background-color: #f2ece2 !important;
+  color: #22262e !important;
+}
+
+.light input[type="text"],
+.light input[type="date"],
+.light input[type="number"],
+.light input[type="search"],
+.light textarea {
+  background-color: #ffffff !important;
+  color: #22262e !important;
+  border-color: #ded7cc !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.light input[type="text"]:hover,
+.light input[type="date"]:hover,
+.light input[type="number"]:hover,
+.light input[type="search"]:hover,
+.light textarea:hover {
+  border-color: #baa48b !important;
+  background-color: #faf7f2 !important;
+}
+
+.light input[type="text"]::placeholder,
+.light input[type="number"]::placeholder,
+.light input[type="search"]::placeholder,
+.light textarea::placeholder {
+  color: #9ea7b4 !important;
+}
+
+.light input[type="text"]:focus,
+.light input[type="date"]:focus,
+.light input[type="number"]:focus,
+.light input[type="search"]:focus,
+.light textarea:focus {
+  border-color: #272b34 !important;
+  box-shadow: 0 0 0 1px #272b34 !important;
+  background-color: #ffffff !important;
+}
+
+.light input[type="checkbox"] {
+  background-color: #ffffff !important;
+  border-color: #ded7cc !important;
+  accent-color: #272b34;
+}
+
+/* Bottom Safe Area for Mobile App Bar */
+.pb-safe {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile Bottom Sheet Smooth Entrance */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Remove up and down arrows from number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+/* Button & Input High-Contrast Rings */
+input:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+/* Touch active scale effect */
+.touch-press:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Hide scrollbar on mobile horizontal menus */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Print Styles for Ledger Statements */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: sans-serif !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .card-print {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
 }
