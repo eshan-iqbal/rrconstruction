@@ -809,8 +809,8 @@ function LedgerContent() {
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-white text-black font-black font-serif flex items-center justify-center text-xl shadow-sm ring-1 ring-zinc-700/50">
-                          {companyProfile?.short_name || 'RR'}
+                        <div className="w-14 h-14 rounded-xl bg-white border border-zinc-300 overflow-hidden flex items-center justify-center shadow-sm shrink-0 p-1">
+                          <img src={companyProfile?.logo_url || '/logo.png'} alt="RR" className="w-full h-full object-contain" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">

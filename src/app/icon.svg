@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09090b" />
+      <stop offset="100%" stop-color="#18181b" />
+    </linearGradient>
+    <linearGradient id="whiteGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Rounded Icon Container -->
+  <rect width="600" height="600" rx="128" fill="url(#iconBg)" />
+  <rect width="592" height="592" x="4" y="4" rx="124" fill="none" stroke="#27272a" stroke-width="6" />
+
+  <g fill="url(#whiteGlow)" transform="translate(10, 10)">
+    <!-- Architectural Towers between the RR -->
+    <!-- Left Tower with Angled Top -->
+    <polygon points="236,200 268,165 268,440 236,440" />
+    <!-- Center Tallest Tower with Angled Top -->
+    <polygon points="278,135 312,95 312,440 278,440" />
+    <!-- Right Tower with Angled Top -->
+    <polygon points="322,145 354,175 354,440 322,440" />
+
+    <!-- Left 'R' -->
+    <path d="M 70 230 L 195 230 C 235 230 260 250 260 288 C 260 320 240 338 205 344 L 255 440 L 190 440 L 148 350 L 122 350 L 122 440 L 70 440 Z M 122 274 L 122 312 L 182 312 C 200 312 210 304 210 293 C 210 282 200 274 182 274 Z" fill-rule="evenodd" />
+
+    <!-- Right 'R' -->
+    <path d="M 305 230 L 430 230 C 470 230 495 250 495 288 C 495 320 475 338 440 344 L 490 440 L 425 440 L 383 350 L 357 350 L 357 440 L 305 440 Z M 357 274 L 357 312 L 417 312 C 435 312 445 304 445 293 C 445 282 435 274 417 274 Z" fill-rule="evenodd" />
+
+    <!-- Bottom Separator Lines & CONSTRUCTION Text -->
+    <!-- Left Line -->
+    <rect x="30" y="474" width="45" height="4" rx="2" />
+    <!-- Text -->
+    <text x="290" y="484" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-weight="900" font-size="28" letter-spacing="14" fill="#ffffff" text-anchor="middle">CONSTRUCTION</text>
+    <!-- Right Line -->
+    <rect x="505" y="474" width="45" height="4" rx="2" />
+  </g>
+</svg>

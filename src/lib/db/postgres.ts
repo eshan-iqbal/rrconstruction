@@ -252,6 +252,7 @@ export async function initDb() {
       ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS statement_title TEXT DEFAULT 'STATEMENT OF SUBLEDGER ACCOUNT';
       ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS statement_subtitle TEXT DEFAULT 'Double-Entry Verified & Reconciled';
       ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS terms_notes TEXT DEFAULT 'Certified official subledger statement issued by RR Construction. Verified under double-entry accounting rules.';
+      ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS logo_url TEXT DEFAULT '/logo.png';
       ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
       ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS is_default INTEGER NOT NULL DEFAULT 0;
       ALTER TABLE company_profile ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();

@@ -890,6 +890,7 @@ export async function POST(req: Request) {
         statement_title,
         statement_subtitle,
         terms_notes,
+        logo_url,
         is_default
       } = body.data;
 
@@ -902,9 +903,9 @@ export async function POST(req: Request) {
       const updateRes = await pool.query(
         `INSERT INTO company_profile (
           id, name, short_name, tagline, est_year, gstin, phone, email, address, website,
-          authorized_signatory, statement_title, statement_subtitle, terms_notes, is_active, is_default, updated_at
+          authorized_signatory, statement_title, statement_subtitle, terms_notes, logo_url, is_active, is_default, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1, $15, NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 1, $16, NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
@@ -920,7 +921,8 @@ export async function POST(req: Request) {
           statement_title = EXCLUDED.statement_title,
           statement_subtitle = EXCLUDED.statement_subtitle,
           terms_notes = EXCLUDED.terms_notes,
-          is_default = CASE WHEN $15 = 1 THEN 1 ELSE company_profile.is_default END,
+          logo_url = COALESCE(EXCLUDED.logo_url, company_profile.logo_url, '/logo.png'),
+          is_default = CASE WHEN $16 = 1 THEN 1 ELSE company_profile.is_default END,
           updated_at = NOW()
         RETURNING *`,
         [
@@ -938,6 +940,7 @@ export async function POST(req: Request) {
           statement_title || 'STATEMENT OF SUBLEDGER ACCOUNT',
           statement_subtitle || 'Double-Entry Verified & Reconciled',
           terms_notes || '',
+          logo_url || '/logo.png',
           is_default === 1 ? 1 : 0
         ]
       );

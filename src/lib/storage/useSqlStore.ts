@@ -138,6 +138,7 @@ export interface CompanyProfile {
   statement_title: string;
   statement_subtitle: string;
   terms_notes: string;
+  logo_url?: string;
   is_active?: number;
   is_default?: number;
   created_at?: string;
@@ -159,6 +160,7 @@ export const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
   statement_title: 'STATEMENT OF SUBLEDGER ACCOUNT',
   statement_subtitle: 'Double-Entry Verified & Reconciled',
   terms_notes: 'Certified official subledger statement issued by RR Construction. Verified under double-entry accounting rules.',
+  logo_url: '/logo.png',
   is_active: 1,
   is_default: 1
 };

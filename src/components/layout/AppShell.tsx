@@ -183,8 +183,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Native App Top Bar */}
       <header className="lg:hidden flex items-center justify-between px-3.5 py-2.5 bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-40">
         <div className="flex items-center gap-2.5 min-w-0">
-          <Link href="/" className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-sm touch-press shrink-0">
-            <span className="text-xs tracking-tighter font-mono font-black">{companyProfile?.short_name || 'RR'}</span>
+          <Link href="/" className="w-8 h-8 rounded-xl bg-white border border-zinc-200 overflow-hidden flex items-center justify-center font-black shadow-sm touch-press shrink-0 p-0.5">
+            <img src={companyProfile?.logo_url || '/logo.png'} alt="Logo" className="w-full h-full object-contain" />
           </Link>
           <div className="min-w-0">
             <div className="font-bold text-xs tracking-tight text-white truncate">
@@ -241,8 +241,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {/* Brand Header */}
           <div className="p-5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-md shrink-0">
-                <span className="text-sm tracking-tight font-mono font-black">{companyProfile?.short_name || 'RR'}</span>
+              <div className="w-10 h-10 rounded-xl bg-white border border-zinc-200 overflow-hidden flex items-center justify-center font-black shadow-md shrink-0 p-0.5">
+                <img src={companyProfile?.logo_url || '/logo.png'} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div className="min-w-0">
                 <h1 className="font-extrabold text-sm tracking-wider uppercase text-white truncate max-w-[150px]">

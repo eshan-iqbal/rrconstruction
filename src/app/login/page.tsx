@@ -66,8 +66,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Centered Brand Header */}
         <div className="flex flex-col items-center text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center font-black shadow-xl">
-            <span className="text-base font-mono font-black tracking-tight">RR</span>
+          <div className="w-20 h-20 rounded-2xl bg-white border border-zinc-200 overflow-hidden flex items-center justify-center shadow-2xl p-1.5">
+            <img src="/logo.png" alt="RR Construction Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="font-extrabold text-base tracking-wider uppercase text-white">

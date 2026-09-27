@@ -22,6 +22,14 @@ const monoFont = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'RR CONSTRUCTION — Worker Supply & Subledger System',
   description: 'Labour Contractor & Worker Supply Management: Splitting, Daily Attendance, Billing, Payouts, Advances & Ledger Statements',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({
