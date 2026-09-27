@@ -116,7 +116,7 @@ export async function GET(req: Request) {
     const rawPartyType = searchParams.get('partyType') || searchParams.get('type') || searchParams.get('party_type');
     const partyType = rawPartyType ? (rawPartyType.toUpperCase() as 'DEALER' | 'WORKER') : 'DEALER';
     const partyId = searchParams.get('partyId') || searchParams.get('id') || searchParams.get('party_id');
-    const fromDate = searchParams.get('fromDate') || '2020-01-01';
+    const fromDate = searchParams.get('fromDate') || '';
     const toDate = searchParams.get('toDate') || new Date().toISOString().split('T')[0];
 
     if (!partyType || !partyId) {
@@ -133,25 +133,38 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: 'Party not found' }, { status: 404 });
     }
 
-    // Opening Balance before fromDate
-    const openingRes = await pool.query(`
-      SELECT
-        COALESCE(SUM(debit), 0)::FLOAT as debits,
-        COALESCE(SUM(credit), 0)::FLOAT as credits
-      FROM ledger_entries
-      WHERE party_type = $1 AND party_id = $2 AND entry_date < $3
-    `, [partyType, partyId, fromDate]);
+    // Opening Balance before fromDate (only if a specific fromDate filter is provided)
+    let openingBalance = 0;
+    if (fromDate && fromDate !== '2020-01-01') {
+      const openingRes = await pool.query(`
+        SELECT
+          COALESCE(SUM(debit), 0)::FLOAT as debits,
+          COALESCE(SUM(credit), 0)::FLOAT as credits
+        FROM ledger_entries
+        WHERE party_type = $1 AND party_id = $2 AND entry_date < $3
+      `, [partyType, partyId, fromDate]);
 
-    const opening = openingRes.rows[0] || { debits: 0, credits: 0 };
-    const openingBalance = Number(opening.debits) - Number(opening.credits);
+      const opening = openingRes.rows[0] || { debits: 0, credits: 0 };
+      openingBalance = Number(opening.debits) - Number(opening.credits);
+    }
 
     // Entries in date range
-    const entriesRes = await pool.query(`
-      SELECT *
-      FROM ledger_entries
-      WHERE party_type = $1 AND party_id = $2 AND entry_date >= $3 AND entry_date <= $4
-      ORDER BY entry_date ASC, created_at ASC
-    `, [partyType, partyId, fromDate, toDate]);
+    let entriesRes;
+    if (fromDate && fromDate !== '2020-01-01') {
+      entriesRes = await pool.query(`
+        SELECT *
+        FROM ledger_entries
+        WHERE party_type = $1 AND party_id = $2 AND entry_date >= $3 AND entry_date <= $4
+        ORDER BY entry_date ASC, created_at ASC
+      `, [partyType, partyId, fromDate, toDate]);
+    } else {
+      entriesRes = await pool.query(`
+        SELECT *
+        FROM ledger_entries
+        WHERE party_type = $1 AND party_id = $2 AND entry_date <= $3
+        ORDER BY entry_date ASC, created_at ASC
+      `, [partyType, partyId, toDate]);
+    }
 
     let runningBalance = openingBalance;
     let totalDebit = 0;

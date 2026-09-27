@@ -593,8 +593,9 @@ export default function DealersPage() {
                   {/* Card Header: Code & Rate & Actions */}
                   <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-white bg-zinc-950 px-2.5 py-1 rounded-lg border border-zinc-800">
-                        {dealer.code}
+                      <span className="text-xs font-mono font-bold text-white bg-zinc-950 px-2.5 py-1 rounded-lg border border-zinc-800 flex items-center gap-1.5">
+                        <Building2 className="w-3 h-3 text-emerald-400" />
+                        <span>Client Dealer</span>
                       </span>
                       <span className="w-2 h-2 rounded-full bg-emerald-500" title="Active Client" />
                     </div>
@@ -851,7 +852,7 @@ export default function DealersPage() {
             <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
               <div className="flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-white" />
-                <h3 className="font-bold text-base text-white tracking-tight">Edit Dealer: {editingDealer.code}</h3>
+                <h3 className="font-bold text-base text-white tracking-tight">Edit Dealer: {editingDealer.name}</h3>
               </div>
               <button
                 onClick={() => {
@@ -1017,7 +1018,7 @@ export default function DealersPage() {
                   <h3 className="font-bold text-base text-white tracking-tight">
                     Dispatch Workers to {selectedDealer.name}
                   </h3>
-                  <p className="text-xs text-zinc-400 font-mono">Dealer Code: {selectedDealer.code} • Atomic Subledger Posting</p>
+                  <p className="text-xs text-zinc-400 font-mono">Client Dealer Account • Subledger Posting</p>
                 </div>
               </div>
               <button onClick={() => setIsSendWorkerOpen(false)} className="text-zinc-400 hover:text-white font-bold p-1">
@@ -1133,7 +1134,7 @@ export default function DealersPage() {
                               <div>
                                 <div className="font-bold text-xs text-white">{w.name}</div>
                                 <div className="text-[10px] text-zinc-400 font-mono">
-                                  {w.code} • {w.skill}
+                                  {w.skill || 'Site Worker'}
                                 </div>
                               </div>
                             </label>
@@ -1353,9 +1354,6 @@ export default function DealersPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-zinc-850 text-zinc-200 border border-zinc-750">
-                        {dealer.code}
-                      </span>
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-950 text-emerald-300 border border-emerald-800">
                         Client Contractor / Dealer
                       </span>

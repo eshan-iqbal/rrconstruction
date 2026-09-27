@@ -553,7 +553,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <option value="">-- Choose Dealer --</option>
                     {dealers.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name} ({d.code}) — ₹{d.default_rate}/day
+                        {d.name} — ₹{d.default_rate}/day
                       </option>
                     ))}
                   </select>
@@ -600,7 +600,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Search workers by name, ID, or trade/skill..."
+                    placeholder="Search workers by name or trade/skill..."
                     value={modalWorkerSearch}
                     onChange={(e) => setModalWorkerSearch(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white"
@@ -651,7 +651,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                               <div>
                                 <div className="font-bold text-xs text-white">{w.name}</div>
                                 <div className="text-[10px] text-zinc-400 font-mono">
-                                  {w.code} • {w.skill}
+                                  {w.skill || 'Site Worker'}
                                 </div>
                               </div>
                             </label>

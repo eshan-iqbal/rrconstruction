@@ -589,7 +589,7 @@ export default function PaymentsPage() {
                           </button>
                         </div>
                         <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">
-                          {p.party_code ? `${p.party_code} • ` : ''}{p.party_type} SUBLEDGER
+                          {p.party_type === 'DEALER' ? 'Client Dealer Account' : 'Worker Wage Account'}
                         </span>
                       </td>
 
@@ -797,12 +797,12 @@ export default function PaymentsPage() {
                   {partyType === 'DEALER'
                     ? dealers.map((d) => (
                         <option key={d.id} value={d.id}>
-                          {d.name} ({d.code})
+                          {d.name}
                         </option>
                       ))
                     : workers.map((w) => (
                         <option key={w.id} value={w.id}>
-                          {w.name} ({w.code} - {w.skill})
+                          {w.name} ({w.skill || 'Site Worker'})
                         </option>
                       ))}
                 </select>

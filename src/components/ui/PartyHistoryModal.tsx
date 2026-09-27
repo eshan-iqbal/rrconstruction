@@ -106,11 +106,8 @@ export default function PartyHistoryModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-zinc-850 text-zinc-200 border border-zinc-750">
-                  {partyCode}
-                </span>
                 <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-mono font-bold uppercase tracking-wider ${
                     isDealer
                       ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                       : 'bg-sky-950 text-sky-300 border border-sky-800'

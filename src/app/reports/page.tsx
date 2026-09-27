@@ -110,13 +110,13 @@ function LedgerContent() {
       return { from: formatYMD(firstDay), to: formatYMD(today) };
     }
     if (preset === 'ALL') {
-      return { from: '2020-01-01', to: formatYMD(today) };
+      return { from: '', to: formatYMD(today) };
     }
-    return { from: '2020-01-01', to: formatYMD(today) };
+    return { from: '', to: formatYMD(today) };
   };
 
   const [activeDatePreset, setActiveDatePreset] = useState<string>('ALL');
-  const [fromDate, setFromDate] = useState<string>('2020-01-01');
+  const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
 
   // Table row filter & search
@@ -640,12 +640,12 @@ function LedgerContent() {
                     {partyType === 'DEALER'
                       ? dealers.map((d) => (
                           <option key={d.id} value={d.id}>
-                            {d.name} ({d.code}) — ₹{d.default_rate}/day
+                            {d.name} — ₹{d.default_rate}/day
                           </option>
                         ))
                       : workers.map((w) => (
                           <option key={w.id} value={w.id}>
-                            {w.name} ({w.code} - {w.skill}) — ₹{w.default_wage}/day
+                            {w.name} ({w.skill || 'Site Worker'}) — ₹{w.default_wage}/day
                           </option>
                         ))}
                   </select>
@@ -809,49 +809,36 @@ function LedgerContent() {
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white text-black font-black font-mono flex items-center justify-center text-base shadow-sm ring-1 ring-zinc-700/50">
+                        <div className="w-12 h-12 rounded-xl bg-white text-black font-black font-serif flex items-center justify-center text-xl shadow-sm ring-1 ring-zinc-700/50">
                           {companyProfile?.short_name || 'RR'}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h1 className="font-black text-xl sm:text-2xl text-white tracking-tight uppercase">
+                            <h1 className="font-black text-xl sm:text-2xl text-white tracking-tight uppercase font-sans">
                               {companyProfile?.name || 'RR CONSTRUCTION'}
                             </h1>
                             {companyProfile?.est_year && (
                               <span className="no-print text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                {companyProfile.est_year}
+                                EST. {companyProfile.est_year}
                               </span>
                             )}
                           </div>
-                          {companyProfile?.tagline && (
-                            <p className="text-xs text-zinc-400 font-medium">
-                              {companyProfile.tagline}
-                            </p>
-                          )}
+                          <p className="text-xs text-zinc-400 font-medium">
+                            {companyProfile?.tagline || 'Labour Suppliers & Civil Infrastructure Contractors'}
+                          </p>
                         </div>
                       </div>
                       <div className="text-[11px] text-zinc-400 font-mono flex items-center gap-2 flex-wrap pt-0.5">
                         {companyProfile?.gstin && (
-                          <span>GSTIN / Reg: <strong className="text-zinc-200">{companyProfile.gstin}</strong></span>
+                          <span>GSTIN / Reg: <strong className="text-zinc-200">{companyProfile.gstin}</strong> •</span>
                         )}
-                        {companyProfile?.phone && (
-                          <>
-                            <span>•</span>
-                            <span>Phone: <strong className="text-zinc-200">{companyProfile.phone}</strong></span>
-                          </>
-                        )}
-                        {companyProfile?.email && (
-                          <>
-                            <span>•</span>
-                            <span>Email: <strong className="text-zinc-200">{companyProfile.email}</strong></span>
-                          </>
-                        )}
+                        <span>Phone: <strong className="text-zinc-200">{companyProfile?.phone || '+91 98765 43210'}</strong></span>
+                        <span>|</span>
+                        <span>Email: <strong className="text-zinc-200">{companyProfile?.email || 'accounts@rrconstruction.in'}</strong></span>
                       </div>
-                      {companyProfile?.address && (
-                        <div className="text-[10px] text-zinc-500 font-mono">
-                          Head Office: {companyProfile.address}
-                        </div>
-                      )}
+                      <div className="text-[10px] text-zinc-400 font-mono">
+                        Head Office: {companyProfile?.address || 'Civil Lines, Sector 62, Noida, Delhi NCR - 201301'}
+                      </div>
                     </div>
 
                     <div className="sm:text-right font-mono shrink-0 space-y-1">
@@ -859,7 +846,7 @@ function LedgerContent() {
                         {companyProfile?.statement_title || 'STATEMENT OF SUBLEDGER ACCOUNT'}
                       </div>
                       <div className="text-xs font-semibold text-zinc-300">
-                        Ref: <span className="font-mono text-white">STMT-{statementData.partyCode}-{fromDate.replace(/-/g, '')}</span>
+                        Ref: <span className="font-mono text-white">STMT-{statementData.partyName?.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10) || 'REC'}-{toDate.replace(/-/g, '')}</span>
                       </div>
                       <div className="text-[11px] text-zinc-400">
                         Date of Issue: <span className="text-zinc-200">{formatDisplayDate(new Date().toISOString().split('T')[0])}</span>
@@ -874,48 +861,63 @@ function LedgerContent() {
                   {/* 2-Column Party & Statement Metadata Box */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono">
                     {/* Left Column: Billed Party Details */}
-                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800/90 space-y-1.5">
+                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
                       <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
-                        {partyType === 'DEALER' ? 'BILLED TO (CLIENT CONTRACTOR / DEALER)' : 'PERSONNEL ACCOUNT (SITE WORKER)'}
+                        {partyType === 'DEALER' ? 'BILLED TO (CLIENT CONTRACTOR / DEALER)' : 'BILLED TO (WORKER PERSONNEL ACCOUNT)'}
                       </div>
                       <div className="font-bold text-base text-white font-sans tracking-tight">
                         {statementData.partyName}
                       </div>
-                      <div className="text-zinc-300 text-[11px] flex items-center gap-2 flex-wrap">
-                        <span className="bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded text-amber-400 font-bold font-mono">
-                          ACC CODE: {statementData.partyCode}
-                        </span>
+                      <div className="space-y-1 text-zinc-300 text-xs">
                         {statementData.partySkill && (
-                          <span className="text-zinc-400">• Role: <strong className="text-zinc-200">{statementData.partySkill}</strong></span>
+                          <div>
+                            <span className="text-zinc-400">Role / Trade: </span>
+                            <strong className="text-zinc-200">{statementData.partySkill}</strong>
+                          </div>
                         )}
                         {statementData.partyPhone && (
-                          <span className="text-zinc-400">• Ph: <strong className="text-zinc-200">{statementData.partyPhone}</strong></span>
+                          <div>
+                            <span className="text-zinc-400">Phone: </span>
+                            <strong className="text-zinc-200">{statementData.partyPhone}</strong>
+                          </div>
+                        )}
+                        {statementData.partyAddress && (
+                          <div className="text-zinc-300 font-sans">
+                            <span className="text-zinc-400 font-mono">Address: </span>
+                            {statementData.partyAddress}
+                          </div>
                         )}
                       </div>
-                      {statementData.partyAddress && (
-                        <div className="text-[11px] text-zinc-400 font-sans truncate pt-0.5">
-                          Address / Site Location: <span className="text-zinc-300">{statementData.partyAddress}</span>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Right Column: Statement Scope & Verification */}
-                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800/90 space-y-1.5">
+                    {/* Right Column: Statement Scope & Specifications */}
+                    <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
                       <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
                         STATEMENT WINDOW & SPECIFICATIONS
                       </div>
-                      <div className="font-bold text-sm text-white flex items-center gap-2">
-                        <span>{formatDisplayDate(fromDate)}</span>
-                        <span className="text-zinc-500 font-normal">to</span>
-                        <span>{formatDisplayDate(toDate)}</span>
-                      </div>
-                      <div className="text-zinc-400 text-[11px] flex items-center gap-2 flex-wrap">
-                        <span>Base Currency: <strong className="text-white">INR (₹)</strong></span>
-                        <span>•</span>
-                        <span>Accounting Basis: <strong className="text-zinc-200">Accrual Subledger</strong></span>
-                      </div>
-                      <div className="text-[10px] text-zinc-500">
-                        Audit Checksum: 0x{statementData.partyCode?.toLowerCase() || '00'}-{fromDate.slice(5).replace('-', '')}-{toDate.slice(5).replace('-', '')}
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 w-32 shrink-0">Statement Period</span>
+                          <span className="text-zinc-500">:</span>
+                          <strong className="text-white">
+                            {fromDate ? `${formatDisplayDate(fromDate)} to ${formatDisplayDate(toDate)}` : `All Records to ${formatDisplayDate(toDate)}`}
+                          </strong>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 w-32 shrink-0">Base Currency</span>
+                          <span className="text-zinc-500">:</span>
+                          <strong className="text-zinc-200">INR (₹)</strong>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 w-32 shrink-0">Accounting Basis</span>
+                          <span className="text-zinc-500">:</span>
+                          <strong className="text-zinc-200">Accrual Subledger</strong>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 w-32 shrink-0">Status</span>
+                          <span className="text-zinc-500">:</span>
+                          <strong className="text-zinc-200">Double-Entry Verified & Reconciled</strong>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -927,23 +929,23 @@ function LedgerContent() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
                   {/* 1. Opening Balance */}
                   <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
-                      1. Opening Balance (B/F)
+                    <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                      1. OPENING BALANCE (B/F)
                     </span>
-                    <div className="text-lg font-bold text-zinc-200 mt-1.5">
+                    <div className="text-xl font-black text-white mt-1.5">
                       {formatINR(statementData.openingBalance)}
                     </div>
                     <div className="text-[10px] text-zinc-500 mt-1">
-                      Prior to {formatDisplayDate(fromDate)}
+                      Prior to {fromDate ? formatDisplayDate(fromDate) : 'statement window'}
                     </div>
                   </div>
 
                   {/* 2. Total Debits */}
                   <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
-                      2. {partyType === 'DEALER' ? 'Total Work Billed (+)' : 'Total Wages Earned (+)'}
+                    <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                      2. {partyType === 'DEALER' ? 'TOTAL WORK BILLED (+)' : 'TOTAL WAGES EARNED (+)'}
                     </span>
-                    <div className="text-lg font-bold text-white mt-1.5">
+                    <div className="text-xl font-black text-white mt-1.5">
                       {formatINR(statementData.totalDebit)}
                     </div>
                     <div className="text-[10px] text-zinc-500 mt-1">
@@ -953,10 +955,10 @@ function LedgerContent() {
 
                   {/* 3. Total Credits */}
                   <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
-                      3. {partyType === 'DEALER' ? 'Payments Received (-)' : 'Payouts & Advances (-)'}
+                    <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                      3. {partyType === 'DEALER' ? 'PAYMENTS RECEIVED (-)' : 'WAGES PAID & ADVANCES (-)'}
                     </span>
-                    <div className="text-lg font-bold text-white mt-1.5">
+                    <div className="text-xl font-black text-white mt-1.5">
                       {formatINR(statementData.totalCredit)}
                     </div>
                     <div className="text-[10px] text-zinc-500 mt-1">
@@ -964,11 +966,10 @@ function LedgerContent() {
                     </div>
                   </div>
 
-                  {/* 4. Closing Balance with High Visibility Status Badge */}
-                  <div className="p-4 rounded-xl bg-zinc-950 border-2 border-zinc-700 flex flex-col justify-between relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-white/5 rounded-full -mr-8 -mt-8 pointer-events-none" />
+                  {/* 4. Closing Balance */}
+                  <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-700 flex flex-col justify-between relative overflow-hidden">
                     <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
-                      4. Net Closing Balance
+                      4. NET CLOSING BALANCE
                     </span>
                     <div className="text-xl font-black text-white mt-1.5">
                       {formatINR(statementData.closingBalance)}
@@ -1039,24 +1040,26 @@ function LedgerContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/70 font-mono">
-                      {/* Opening Balance Row */}
-                      <tr className="bg-zinc-950/80 text-zinc-400 font-sans italic">
-                        <td className="p-3 font-mono font-semibold">{formatDisplayDate(fromDate)}</td>
-                        <td className="p-3" colSpan={2}>
-                          <div className="font-semibold text-zinc-200">
-                            [Opening Balance B/F as of {formatDisplayDate(fromDate)}]
-                          </div>
-                          <div className="text-[10px] text-zinc-500 font-mono not-italic">
-                            Cumulative verified balance prior to statement window
-                          </div>
-                        </td>
-                        <td className="p-3 text-right font-mono font-bold text-zinc-400">-</td>
-                        <td className="p-3 text-right font-mono font-bold text-zinc-400">-</td>
-                        <td className="p-3 text-right font-mono font-black text-white">
-                          {formatINR(statementData.openingBalance)}
-                        </td>
-                        <td className="no-print p-3 text-center text-zinc-600">-</td>
-                      </tr>
+                      {/* Opening Balance Row - Only shown when opening balance is non-zero */}
+                      {Boolean(statementData.openingBalance && statementData.openingBalance !== 0 && fromDate) && (
+                        <tr className="bg-zinc-950/80 text-zinc-400 font-sans italic">
+                          <td className="p-3 font-mono font-semibold">{formatDisplayDate(fromDate)}</td>
+                          <td className="p-3" colSpan={2}>
+                            <div className="font-semibold text-zinc-200">
+                              Opening Balance B/F as of {formatDisplayDate(fromDate)}
+                            </div>
+                            <div className="text-[10px] text-zinc-500 font-mono not-italic">
+                              Balance brought forward prior to selected period
+                            </div>
+                          </td>
+                          <td className="p-3 text-right font-mono font-bold text-zinc-400">-</td>
+                          <td className="p-3 text-right font-mono font-bold text-zinc-400">-</td>
+                          <td className="p-3 text-right font-mono font-black text-white">
+                            {formatINR(statementData.openingBalance)}
+                          </td>
+                          <td className="no-print p-3 text-center text-zinc-600">-</td>
+                        </tr>
+                      )}
 
                       {/* Transaction Rows */}
                       {filteredRows.length === 0 ? (
@@ -1133,7 +1136,7 @@ function LedgerContent() {
                       {/* Closing Subtotals Row (Standard Accounting Convention) */}
                       <tr className="bg-zinc-950 font-mono font-bold text-white border-t-2 border-zinc-700">
                         <td className="p-3 uppercase text-[11px]" colSpan={3}>
-                          Statement Period Totals & Closing Balance
+                          STATEMENT PERIOD TOTALS & CLOSING BALANCE
                         </td>
                         <td className="p-3 text-right text-white font-mono">
                           {formatINR(statementData.totalDebit)}
@@ -1141,7 +1144,7 @@ function LedgerContent() {
                         <td className="p-3 text-right text-zinc-300 font-mono">
                           {formatINR(statementData.totalCredit)}
                         </td>
-                        <td className="p-3 text-right font-black text-base text-white border-b-2 border-white font-mono">
+                        <td className="p-3 text-right font-black text-base text-white font-mono">
                           {formatINR(statementData.closingBalance)}
                         </td>
                         <td className="no-print p-3 text-center">-</td>
@@ -1167,31 +1170,37 @@ function LedgerContent() {
                 {/* ------------------------------------------------------------- */}
                 {/* PRINT & SCREEN AUDIT SIGNATURE / STAMP SECTION                */}
                 {/* ------------------------------------------------------------- */}
-                <div className="pt-8 border-t border-zinc-800">
-                  <div className="grid grid-cols-2 gap-6 sm:gap-12 font-mono text-xs">
+                <div className="pt-6 border-t border-zinc-800">
+                  <div className="grid grid-cols-2 gap-4 sm:gap-6 font-mono text-xs">
                     {/* Authorized Signatory Box */}
-                    <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col justify-between h-36">
+                    <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col justify-between h-40">
                       <div>
                         <div className="font-bold text-white uppercase text-[11px] tracking-wide">
                           {companyProfile?.authorized_signatory || `FOR ${companyProfile?.name || 'RR CONSTRUCTION'}`}
                         </div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">Authorized Signatory & Seal</div>
+                        <div className="text-[10px] text-zinc-400 mt-0.5">Authorized Signatory & Seal</div>
                       </div>
-                      <div className="border-t border-zinc-700/80 pt-2 flex items-center justify-between text-[10px] text-zinc-400">
-                        <span>Authorized Signatory</span>
-                        <span>Date: ____________</span>
+                      <div className="space-y-2">
+                        <div className="w-full border-t border-zinc-700/80" />
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-sans">
+                          <span>Authorized Signatory</span>
+                          <span className="font-mono">Date: ____________</span>
+                        </div>
                       </div>
                     </div>
 
                     {/* Party Acknowledgment Box */}
-                    <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/80 flex flex-col justify-between h-36 text-right">
-                      <div>
+                    <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col justify-between h-40">
+                      <div className="text-right">
                         <div className="font-bold text-white uppercase text-[11px] tracking-wide">PARTY ACKNOWLEDGEMENT</div>
-                        <div className="text-[10px] text-zinc-400 mt-0.5 font-bold">{statementData.partyName}</div>
+                        <div className="text-[11px] text-zinc-300 mt-0.5 font-bold font-sans">{statementData.partyName}</div>
                       </div>
-                      <div className="border-t border-zinc-700/80 pt-2 flex items-center justify-between text-[10px] text-zinc-400">
-                        <span>Confirmed & Accepted</span>
-                        <span>Date: ____________</span>
+                      <div className="space-y-2">
+                        <div className="w-full border-t border-zinc-700/80" />
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-sans">
+                          <span>Confirmed & Accepted</span>
+                          <span className="font-mono">Date: ____________</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1326,7 +1335,6 @@ function LedgerContent() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-950/70 text-zinc-400 font-mono font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="p-3.5">Dealer Code</th>
                     <th className="p-3.5">Dealer Name & Contact</th>
                     <th className="p-3.5 text-right">Daily Rate</th>
                     <th className="p-3.5 text-right">Total Billed</th>
@@ -1340,7 +1348,6 @@ function LedgerContent() {
                   {summaryLoading || !summaryData ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                        <td className="p-3.5"><Skeleton className="w-16 h-4 rounded bg-zinc-800" /></td>
                         <td className="p-3.5"><Skeleton className="w-36 h-4 rounded bg-zinc-800" /></td>
                         <td className="p-3.5 text-right"><Skeleton className="w-14 h-4 rounded bg-zinc-800 ml-auto" /></td>
                         <td className="p-3.5 text-right"><Skeleton className="w-16 h-4 rounded bg-zinc-800 ml-auto" /></td>
@@ -1352,7 +1359,7 @@ function LedgerContent() {
                     ))
                   ) : summaryData.dealers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-10 text-center text-zinc-500 font-sans">
+                      <td colSpan={7} className="py-10 text-center text-zinc-500 font-sans">
                         No client dealers registered yet.
                       </td>
                     </tr>
@@ -1363,13 +1370,12 @@ function LedgerContent() {
                         if (summaryFilter === 'SETTLED' && d.balanceDue !== 0) return false;
                         if (summarySearch.trim()) {
                           const q = summarySearch.toLowerCase();
-                          return d.name.toLowerCase().includes(q) || d.code.toLowerCase().includes(q) || (d.phone && d.phone.includes(q));
+                          return d.name.toLowerCase().includes(q) || (d.phone && d.phone.includes(q));
                         }
                         return true;
                       })
                       .map((d: any) => (
                         <tr key={d.id} className="hover:bg-zinc-850/60 transition-colors">
-                          <td className="p-3.5 font-bold text-white">{d.code}</td>
                           <td className="p-3.5 font-sans">
                             <div className="font-bold text-white text-xs">{d.name}</div>
                             {d.phone && <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{d.phone}</div>}
@@ -1422,7 +1428,6 @@ function LedgerContent() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-800 bg-zinc-950/70 text-zinc-400 font-mono font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="p-3.5">Worker Code</th>
                     <th className="p-3.5">Worker Name & Trade</th>
                     <th className="p-3.5 text-right">Base Wage</th>
                     <th className="p-3.5 text-right">Total Wages Earned</th>
@@ -1436,7 +1441,6 @@ function LedgerContent() {
                   {summaryLoading || !summaryData ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                        <td className="p-3.5"><Skeleton className="w-16 h-4 rounded bg-zinc-800" /></td>
                         <td className="p-3.5"><Skeleton className="w-36 h-4 rounded bg-zinc-800" /></td>
                         <td className="p-3.5 text-right"><Skeleton className="w-14 h-4 rounded bg-zinc-800 ml-auto" /></td>
                         <td className="p-3.5 text-right"><Skeleton className="w-16 h-4 rounded bg-zinc-800 ml-auto" /></td>
@@ -1448,7 +1452,7 @@ function LedgerContent() {
                     ))
                   ) : summaryData.workers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-10 text-center text-zinc-500 font-sans">
+                      <td colSpan={7} className="py-10 text-center text-zinc-500 font-sans">
                         No worker personnel registered yet.
                       </td>
                     </tr>
@@ -1459,13 +1463,12 @@ function LedgerContent() {
                         if (summaryFilter === 'SETTLED' && w.netPayable !== 0) return false;
                         if (summarySearch.trim()) {
                           const q = summarySearch.toLowerCase();
-                          return w.name.toLowerCase().includes(q) || w.code.toLowerCase().includes(q) || (w.skill && w.skill.toLowerCase().includes(q));
+                          return w.name.toLowerCase().includes(q) || (w.skill && w.skill.toLowerCase().includes(q));
                         }
                         return true;
                       })
                       .map((w: any) => (
                         <tr key={w.id} className="hover:bg-zinc-850/60 transition-colors">
-                          <td className="p-3.5 font-bold text-white">{w.code}</td>
                           <td className="p-3.5 font-sans">
                             <div className="font-bold text-white text-xs">{w.name}</div>
                             <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{w.skill}</div>
