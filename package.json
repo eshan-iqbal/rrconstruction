@@ -12,9 +12,7 @@
     "query": "node scripts/query.js"
   },
   "dependencies": {
-    "@better-auth/infra": "^0.4.10",
     "bcryptjs": "^3.0.3",
-    "better-auth": "^1.7.5",
     "clsx": "^2.1.1",
     "jose": "^6.2.12",
     "lucide-react": "^1.47.0",

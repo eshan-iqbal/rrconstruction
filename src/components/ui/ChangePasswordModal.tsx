@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { KeyRound, Lock, Eye, EyeOff, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { KeyRound, Lock, Eye, EyeOff, X, Loader2 } from 'lucide-react';
 import { changePassword } from '@/lib/auth/auth-client';
 import { useToast } from '@/components/ui/Toast';
 
@@ -21,41 +21,28 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      const msg = 'Please fill in all fields.';
-      setErrorMessage(msg);
-      toast.warning(msg, 'Validation Error');
+      toast.warning('Please fill in all fields.', 'Validation Error');
       return;
     }
 
     if (newPassword.length < 6) {
-      const msg = 'New password must be at least 6 characters long.';
-      setErrorMessage(msg);
-      toast.warning(msg, 'Validation Error');
+      toast.warning('New password must be at least 6 characters long.', 'Validation Error');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      const msg = 'New password and confirm password do not match.';
-      setErrorMessage(msg);
-      toast.warning(msg, 'Validation Error');
+      toast.warning('New password and confirm password do not match.', 'Validation Error');
       return;
     }
 
     if (newPassword === currentPassword) {
-      const msg = 'New password cannot be the same as current password.';
-      setErrorMessage(msg);
-      toast.warning(msg, 'Validation Error');
+      toast.warning('New password cannot be the same as current password.', 'Validation Error');
       return;
     }
 
@@ -69,22 +56,16 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
       if (res?.error) {
         const msg = res.error.message || 'Error changing password. Please check your current password.';
-        setErrorMessage(msg);
         toast.error(msg, 'Password Change Failed');
       } else {
-        setSuccessMessage('Password changed successfully!');
         toast.success('Your account password was updated successfully!', 'Security Updated');
-        setTimeout(() => {
-          setCurrentPassword('');
-          setNewPassword('');
-          setConfirmPassword('');
-          setSuccessMessage(null);
-          onClose();
-        }, 1200);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        onClose();
       }
     } catch (err: any) {
       const msg = err?.message || 'Failed to update password.';
-      setErrorMessage(msg);
       toast.error(msg, 'Security Error');
     } finally {
       setLoading(false);
@@ -115,21 +96,6 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 font-sans">
-          {/* Error Notice */}
-          {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-200 font-sans">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* Success Notice */}
-          {successMessage && (
-            <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-900/50 flex items-start gap-2.5 text-xs text-emerald-200 font-mono">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>{successMessage}</span>
-            </div>
-          )}
 
           {/* Current Password */}
           <div>

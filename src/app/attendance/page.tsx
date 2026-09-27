@@ -17,10 +17,12 @@ import {
   Square,
   Pencil,
   Trash2,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { useSqlStore, MultiWorkerItem, WorkAllocation } from '@/lib/storage/useSqlStore';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
+import PartyHistoryModal from '@/components/ui/PartyHistoryModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 
@@ -65,6 +67,7 @@ export default function AttendancePage() {
 
   // Delete Confirmation State
   const [allocationToDelete, setAllocationToDelete] = useState<WorkAllocation | null>(null);
+  const [selectedPartyModal, setSelectedPartyModal] = useState<{ type: 'DEALER' | 'WORKER'; id: string } | null>(null);
 
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -277,7 +280,7 @@ export default function AttendancePage() {
             onClick={handleOpenDispatch}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm active:scale-95"
           >
-            <PlusCircle className="w-4 h-4 text-black stroke-[2.5]" /> + Send Multi-Workers
+            <PlusCircle className="w-4 h-4 text-black stroke-[2.5]" /> Send Multi-Workers
           </button>
         </div>
       </div>
@@ -326,18 +329,42 @@ export default function AttendancePage() {
                   <td colSpan={9} className="py-14 text-center text-zinc-400">
                     <Users className="w-10 h-10 mx-auto text-zinc-600 mb-2.5" />
                     <p className="text-sm font-semibold text-zinc-300">No workers dispatched on {selectedDate}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Click "+ Send Multi-Workers" to dispatch personnel to a dealer site.</p>
+                    <p className="text-xs text-zinc-500 mt-1">Click "Send Multi-Workers" to dispatch personnel to a dealer site.</p>
                   </td>
                 </tr>
               ) : (
                 dateAllocations.map((a) => {
                   return (
                     <tr key={a.id} className="hover:bg-zinc-850/60 transition-colors">
-                      <td className="p-3.5 font-bold text-white">
-                        {a.worker_name}
-                        <span className="text-[10px] text-zinc-400 font-mono block font-normal">{a.worker_skill}</span>
+                      <td className="p-3.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPartyModal({ type: 'WORKER', id: a.worker_id })}
+                          className="font-bold text-white hover:text-sky-400 transition-colors flex items-center gap-1.5 group text-left cursor-pointer"
+                          title="Click to view worker history and profile"
+                        >
+                          <Users className="w-3.5 h-3.5 text-zinc-400 group-hover:text-sky-400" />
+                          <span className="underline decoration-zinc-700 group-hover:decoration-sky-400 underline-offset-2">
+                            {a.worker_name}
+                          </span>
+                          <Eye className="w-3 h-3 text-zinc-500 group-hover:text-sky-400 opacity-60 group-hover:opacity-100" />
+                        </button>
+                        <span className="text-[10px] text-zinc-400 font-mono block font-normal mt-0.5">{a.worker_skill || 'Worker'}</span>
                       </td>
-                      <td className="p-3.5 font-semibold text-zinc-200">{a.dealer_name}</td>
+                      <td className="p-3.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPartyModal({ type: 'DEALER', id: a.dealer_id })}
+                          className="font-semibold text-zinc-200 hover:text-emerald-400 transition-colors flex items-center gap-1.5 group text-left cursor-pointer"
+                          title="Click to view dealer history and balance"
+                        >
+                          <Building2 className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-400" />
+                          <span className="underline decoration-zinc-700 group-hover:decoration-emerald-400 underline-offset-2">
+                            {a.dealer_name}
+                          </span>
+                          <Eye className="w-3 h-3 text-zinc-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100" />
+                        </button>
+                      </td>
                       <td className="p-3.5 text-zinc-400">{a.site_name || 'General Site'}</td>
                       <td className="p-3.5">
                         <span className="px-2 py-0.5 rounded bg-white text-black font-mono font-bold text-[10px]">
@@ -761,6 +788,15 @@ export default function AttendancePage() {
         onConfirm={handleConfirmDeleteAllocation}
         onClose={() => setAllocationToDelete(null)}
       />
+
+      {/* Party Details & History Modal */}
+      {selectedPartyModal && (
+        <PartyHistoryModal
+          partyType={selectedPartyModal.type}
+          partyId={selectedPartyModal.id}
+          onClose={() => setSelectedPartyModal(null)}
+        />
+      )}
     </div>
   );
 }

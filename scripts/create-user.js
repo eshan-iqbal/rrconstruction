@@ -1,71 +1,62 @@
 #!/usr/bin/env node
-const http = require('http');
+const bcrypt = require('bcryptjs');
+const { Pool } = require('pg');
 
-const username = process.argv[2];
-const password = process.argv[3];
-const name = process.argv[4] || username;
+const username = process.argv[2] || 'rrconstruction';
+const password = process.argv[3] || 'rrconstruction';
+const name = process.argv[4] || 'RR Construction';
 const role = (process.argv[5] || 'OWNER').toUpperCase();
 
-if (!username || !password) {
-  console.log(`
-Usage:
-  node scripts/create-user.js <username> <password> [fullName] [role]
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  'postgresql://neondb_owner:npg_tRPxDpBQun35@ep-blue-shadow-b5tvmyx8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require';
 
-Examples:
-  node scripts/create-user.js ramesh password123 "Ramesh Kumar" OWNER
-  node scripts/create-user.js supervisor1 pass123 "Field Supervisor" SUPERVISOR
-  node scripts/create-user.js accountant1 pass123 "Site Accountant" ACCOUNTANT
-`);
-  process.exit(1);
-}
-
-const payload = JSON.stringify({
-  email: `${username.toLowerCase()}@rrconstruction.app`,
-  username: username.toLowerCase(),
-  name: name,
-  password: password,
-  role: role,
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
 });
 
-const req = http.request(
-  {
-    hostname: '127.0.0.1',
-    port: 3000,
-    path: '/api/auth/sign-up/email',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(payload),
-    },
-  },
-  (res) => {
-    let data = '';
-    res.on('data', (chunk) => (data += chunk));
-    res.on('end', () => {
-      try {
-        const json = JSON.parse(data);
-        if (json.error) {
-          console.error(`❌ Error creating user:`, json.error.message || json.error);
-        } else {
-          console.log(`✅ User successfully created in Better Auth & SQLite!`);
-          console.log(`-----------------------------------------------`);
-          console.log(`Username : ${username.toLowerCase()}`);
-          console.log(`Name     : ${name}`);
-          console.log(`Role     : ${role}`);
-          console.log(`Password : ${password}`);
-          console.log(`-----------------------------------------------`);
-        }
-      } catch (e) {
-        console.log('Response:', data);
-      }
-    });
+(async () => {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT NOT NULL DEFAULT 'RR Construction',
+        role TEXT NOT NULL DEFAULT 'OWNER',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const existing = await client.query('SELECT * FROM admin_users LIMIT 1');
+    if (existing.rows.length > 0) {
+      await client.query(
+        'UPDATE admin_users SET username = $1, password_hash = $2, name = $3, role = $4, updated_at = NOW() WHERE id = $5',
+        [username.toLowerCase(), hashedPassword, name, role, existing.rows[0].id]
+      );
+    } else {
+      await client.query(
+        'INSERT INTO admin_users (id, username, password_hash, name, role) VALUES ($1, $2, $3, $4, $5)',
+        ['admin_main_001', username.toLowerCase(), hashedPassword, name, role]
+      );
+    }
+
+    console.log(`✅ Admin Account successfully configured for single-account JWT auth!`);
+    console.log(`-----------------------------------------------`);
+    console.log(`Username : ${username.toLowerCase()}`);
+    console.log(`Name     : ${name}`);
+    console.log(`Role     : ${role}`);
+    console.log(`Password : ${password}`);
+    console.log(`-----------------------------------------------`);
+  } catch (err) {
+    console.error('Error creating/updating admin user:', err);
+  } finally {
+    client.release();
+    await pool.end();
   }
-);
-
-req.on('error', (err) => {
-  console.error('❌ Could not connect to dev server on port 3000. Is "npm run dev" running?');
-  console.error(err.message);
-});
-
-req.write(payload);
-req.end();
+})();

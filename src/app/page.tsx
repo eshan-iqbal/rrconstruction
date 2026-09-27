@@ -19,9 +19,11 @@ import {
 } from 'lucide-react';
 import { useSqlStore } from '@/lib/storage/useSqlStore';
 import { Skeleton } from '@/components/ui/Skeleton';
+import PartyHistoryModal from '@/components/ui/PartyHistoryModal';
 
 export default function DashboardPage() {
   const { dealers, sites, workers, allocations, payments, metrics, loading } = useSqlStore();
+  const [selectedPartyModal, setSelectedPartyModal] = React.useState<{ type: 'DEALER' | 'WORKER'; id: string } | null>(null);
 
   const getTodayDate = () => {
     const d = new Date();
@@ -327,7 +329,7 @@ export default function DashboardPage() {
             <Zap className="w-3.5 h-3.5 text-zinc-300" />
             Quick 1-Tap Actions
           </span>
-          <span className="text-[10px] font-mono text-zinc-500">Layerbase PostgreSQL Cloud</span>
+          <span className="text-[10px] font-mono text-zinc-500">Neon PostgreSQL Cloud</span>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 font-mono text-xs">
@@ -412,7 +414,7 @@ export default function DashboardPage() {
                   href="/attendance"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-bold text-[11px] font-mono uppercase"
                 >
-                  <Send className="w-3 h-3" /> + Send Workers
+                  <Send className="w-3 h-3" /> Send Workers
                 </Link>
               </div>
             ) : (
@@ -422,10 +424,22 @@ export default function DashboardPage() {
                   className="p-2.5 sm:p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs hover:border-zinc-700 transition-colors"
                 >
                   <div className="min-w-0 pr-2">
-                    <div className="font-bold text-white truncate">{a.worker_name}</div>
-                    <div className="text-[10px] text-zinc-400 font-mono truncate">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPartyModal({ type: 'WORKER', id: a.worker_id })}
+                      className="font-bold text-white hover:text-sky-400 transition-colors truncate text-left block cursor-pointer"
+                      title="Click to view worker details and shifts"
+                    >
+                      {a.worker_name}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPartyModal({ type: 'DEALER', id: a.dealer_id })}
+                      className="text-[10px] text-zinc-400 hover:text-emerald-400 font-mono truncate text-left block cursor-pointer transition-colors"
+                      title="Click to view dealer details and balance"
+                    >
                       {a.dealer_name} • <span className="text-zinc-500">{a.work_date}</span>
-                    </div>
+                    </button>
                   </div>
                   <div className="text-right font-mono shrink-0">
                     <span className="px-1.5 py-0.5 rounded bg-white text-black font-bold text-[9px] sm:text-[10px]">
@@ -484,7 +498,14 @@ export default function DashboardPage() {
                         {initialLetter}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-white truncate">{p.party_name}</div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPartyModal({ type: p.party_type, id: p.party_id })}
+                          className="font-bold text-white hover:text-emerald-400 transition-colors truncate text-left block cursor-pointer"
+                          title="Click to view full shift and payment details"
+                        >
+                          {p.party_name}
+                        </button>
                         <div className="text-[10px] text-zinc-400 font-mono truncate">
                           {p.receipt_number} • {p.method}
                         </div>
@@ -503,6 +524,15 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Party Details & History Modal */}
+      {selectedPartyModal && (
+        <PartyHistoryModal
+          partyType={selectedPartyModal.type}
+          partyId={selectedPartyModal.id}
+          onClose={() => setSelectedPartyModal(null)}
+        />
+      )}
     </div>
   );
 }

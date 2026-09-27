@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   Building2,
   PlusCircle,
+  Plus,
   Search,
   Phone,
   MapPin,
@@ -21,10 +22,13 @@ import {
   Sparkles,
   CheckSquare,
   Square,
-  ChevronRight,
   Pencil,
   Trash2,
-  Loader2
+  Loader2,
+  Eye,
+  ExternalLink,
+  X,
+  History
 } from 'lucide-react';
 import { useSqlStore, Dealer, Worker, MultiWorkerItem } from '@/lib/storage/useSqlStore';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
@@ -57,6 +61,10 @@ export default function DealersPage() {
   } = useSqlStore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Dealer History & Details Modal
+  const [selectedHistoryDealer, setSelectedHistoryDealer] = useState<Dealer | null>(null);
+  const [dealerHistoryTab, setDealerHistoryTab] = useState<'WORK' | 'PAYMENTS'>('WORK');
 
   const getTodayDate = () => {
     const d = new Date();
@@ -128,8 +136,8 @@ export default function DealersPage() {
 
   const handleSaveDealer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      toast.warning('Please provide a dealer or company name.', 'Validation Error');
+    if (!name.trim() || !phone.trim() || !address.trim() || defaultRate === '' || Number(defaultRate) <= 0) {
+      toast.warning('Please fill in all dealer fields (Name, Phone, Location, and Billing Rate).', 'Validation Error');
       return;
     }
 
@@ -137,9 +145,9 @@ export default function DealersPage() {
     try {
       await addDealer({
         name: name.trim(),
-        phone: phone.trim() || undefined,
-        address: address.trim() || undefined,
-        default_rate: defaultRate !== '' ? Number(defaultRate) : 0
+        phone: phone.trim(),
+        address: address.trim(),
+        default_rate: Number(defaultRate)
       });
 
       setIsDealerModalOpen(false);
@@ -166,8 +174,8 @@ export default function DealersPage() {
 
   const handleSaveEditDealer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingDealer || !editDealerName.trim()) {
-      toast.warning('Dealer name cannot be blank.', 'Validation Error');
+    if (!editingDealer || !editDealerName.trim() || !editDealerPhone.trim() || !editDealerAddress.trim() || editDealerRate === '' || Number(editDealerRate) <= 0) {
+      toast.warning('Please fill in all dealer fields (Name, Phone, Location, and Billing Rate).', 'Validation Error');
       return;
     }
 
@@ -176,9 +184,9 @@ export default function DealersPage() {
       await editDealer({
         id: editingDealer.id,
         name: editDealerName.trim(),
-        phone: editDealerPhone.trim() || undefined,
-        address: editDealerAddress.trim() || undefined,
-        default_rate: editDealerRate !== '' ? Number(editDealerRate) : 0
+        phone: editDealerPhone.trim(),
+        address: editDealerAddress.trim(),
+        default_rate: Number(editDealerRate)
       });
 
       setIsEditDealerModalOpen(false);
@@ -209,8 +217,8 @@ export default function DealersPage() {
 
   const handleSaveSite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetDealerId || !siteName.trim()) {
-      toast.warning('Please provide a valid site name.', 'Validation Error');
+    if (!targetDealerId || !siteName.trim() || !siteAddress.trim()) {
+      toast.warning('Please provide both site name and site location address.', 'Validation Error');
       return;
     }
 
@@ -219,7 +227,7 @@ export default function DealersPage() {
       await addSite({
         dealer_id: targetDealerId,
         name: siteName.trim(),
-        address: siteAddress.trim() || undefined
+        address: siteAddress.trim()
       });
 
       setIsSiteModalOpen(false);
@@ -426,7 +434,7 @@ export default function DealersPage() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-md active:scale-95"
             >
               <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Add New Dealer</span>
+              <span>Add New Dealer</span>
             </button>
           </div>
         </div>
@@ -545,14 +553,14 @@ export default function DealersPage() {
           <Building2 className="w-12 h-12 mx-auto text-zinc-600" />
           <h3 className="text-base font-bold text-white">No Dealers Registered Yet</h3>
           <p className="text-xs text-zinc-400 max-w-md mx-auto">
-            Click "+ Add New Dealer" to register your client contractors or developers to whom you supply labour.
+            Click "Add New Dealer" to register your client contractors or developers to whom you supply labour.
           </p>
           <button
             onClick={() => {
               setName('');
               setPhone('');
               setAddress('');
-              setDefaultRate(900);
+              setDefaultRate('');
               setIsDealerModalOpen(true);
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider font-mono hover:bg-zinc-200"
@@ -594,11 +602,19 @@ export default function DealersPage() {
                       <span className="text-xs font-mono text-zinc-400">
                         Rate: <strong className="text-white font-bold">₹{dealer.default_rate}/day</strong>
                       </span>
-                      {/* Edit & Delete Action Buttons */}
+                      {/* View, Edit & Delete Action Buttons */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedHistoryDealer(dealer)}
+                        title="View Work Shifts & Payment History"
+                        className="p-1.5 rounded-lg bg-zinc-800 hover:bg-emerald-950/80 text-zinc-300 hover:text-emerald-400 border border-zinc-750 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => handleOpenEditDealer(dealer)}
                         title="Edit Dealer Details"
-                        className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-750 transition-colors"
+                        className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-750 text-zinc-300 hover:text-white border border-zinc-750 transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -614,9 +630,17 @@ export default function DealersPage() {
 
                   {/* Dealer Name & Contact */}
                   <div>
-                    <h3 className="text-lg font-black text-white tracking-tight group-hover:text-zinc-100 transition-colors">
-                      {dealer.name}
-                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHistoryDealer(dealer)}
+                      className="text-left group/title block cursor-pointer"
+                      title="Click to view full work shift & payment history"
+                    >
+                      <h3 className="text-lg font-black text-white tracking-tight group-hover/title:text-emerald-400 transition-colors flex items-center gap-1.5">
+                        <span>{dealer.name}</span>
+                        <Eye className="w-4 h-4 text-zinc-500 opacity-0 group-hover/title:opacity-100 transition-opacity text-emerald-400" />
+                      </h3>
+                    </button>
                     <div className="mt-2 space-y-1.5 text-xs text-zinc-400 font-mono">
                       {dealer.phone ? (
                         <div className="flex items-center gap-2">
@@ -668,14 +692,15 @@ export default function DealersPage() {
                         }}
                         className="text-[11px] text-zinc-300 hover:text-white font-semibold flex items-center gap-1 hover:underline"
                       >
-                        + Add Site
+                        <Plus className="w-3 h-3" />
+                        <span>Add Site</span>
                       </button>
                     </div>
 
                     <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
                       {dealerSites.length === 0 ? (
                         <div className="p-2 rounded-lg bg-zinc-950/60 border border-zinc-850 text-[11px] text-zinc-500 font-mono">
-                          Main account site only. Click + Add Site to register projects.
+                          Main account site only. Click Add Site to register projects.
                         </div>
                       ) : (
                         dealerSites.map((s) => (
@@ -701,7 +726,7 @@ export default function DealersPage() {
                     className="w-full sm:flex-1 py-2.5 px-3 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 touch-press"
                   >
                     <Send className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>+ Send Workers</span>
+                    <span>Send Workers</span>
                   </button>
 
                   <div className="flex items-center gap-1.5 w-full sm:w-auto">
@@ -758,9 +783,10 @@ export default function DealersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Phone / Mobile Number</label>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">Phone / Mobile Number *</label>
                 <input
                   type="tel"
+                  required
                   placeholder="e.g. +91 98765 43210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -769,9 +795,10 @@ export default function DealersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Office / Base Location</label>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">Office / Base Location *</label>
                 <input
                   type="text"
+                  required
                   placeholder="e.g. Sector 62, Gurgaon, South City..."
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -781,13 +808,14 @@ export default function DealersPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1 font-mono">
-                  Default Billing Rate (₹ / Worker / Day)
+                  Default Billing Rate (₹ / Worker / Day) *
                 </label>
                 <input
                   type="number"
+                  required
                   min="1"
                   step="any"
-                  placeholder="e.g. 900"
+                  placeholder="Enter billing rate (e.g. 850)"
                   value={defaultRate}
                   onChange={(e) => setDefaultRate(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-base font-mono font-bold text-white focus:outline-none focus:ring-1 focus:ring-white"
@@ -804,8 +832,8 @@ export default function DealersPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  disabled={!name.trim() || !phone.trim() || !address.trim() || defaultRate === '' || Number(defaultRate) <= 0 || isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {isSubmitting ? 'Saving...' : 'Save Dealer'}
@@ -850,9 +878,10 @@ export default function DealersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Phone / Mobile Number</label>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">Phone / Mobile Number *</label>
                 <input
                   type="tel"
+                  required
                   placeholder="e.g. +91 98765 43210"
                   value={editDealerPhone}
                   onChange={(e) => setEditDealerPhone(e.target.value)}
@@ -861,9 +890,10 @@ export default function DealersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Office / Base Location</label>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">Office / Base Location *</label>
                 <input
                   type="text"
+                  required
                   placeholder="e.g. Sector 62, Gurgaon, South City..."
                   value={editDealerAddress}
                   onChange={(e) => setEditDealerAddress(e.target.value)}
@@ -873,13 +903,14 @@ export default function DealersPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1 font-mono">
-                  Default Billing Rate (₹ / Worker / Day)
+                  Default Billing Rate (₹ / Worker / Day) *
                 </label>
                 <input
                   type="number"
+                  required
                   min="1"
                   step="any"
-                  placeholder="e.g. 900"
+                  placeholder="Enter billing rate (e.g. 850)"
                   value={editDealerRate}
                   onChange={(e) => setEditDealerRate(e.target.value === '' ? '' : Number(e.target.value))}
                   className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-800 text-base font-mono font-bold text-white focus:outline-none focus:ring-1 focus:ring-white"
@@ -899,8 +930,8 @@ export default function DealersPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  disabled={!editDealerName.trim() || !editDealerPhone.trim() || !editDealerAddress.trim() || editDealerRate === '' || Number(editDealerRate) <= 0 || isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {isSubmitting ? 'Updating...' : 'Update Dealer'}
@@ -939,9 +970,10 @@ export default function DealersPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">Site Address / Landmark</label>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1">Site Address / Landmark *</label>
                 <input
                   type="text"
+                  required
                   placeholder="e.g. Near Gate 3, Sector 18..."
                   value={siteAddress}
                   onChange={(e) => setSiteAddress(e.target.value)}
@@ -959,8 +991,8 @@ export default function DealersPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  disabled={!siteName.trim() || !siteAddress.trim() || isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {isSubmitting ? 'Saving...' : 'Save Project Site'}
@@ -1295,6 +1327,233 @@ export default function DealersPage() {
         onConfirm={handleConfirmDeleteDealer}
         onClose={() => setDealerToDelete(null)}
       />
+
+      {/* Dealer Details & History Modal */}
+      {selectedHistoryDealer && (() => {
+        const dealer = selectedHistoryDealer;
+        const dealerAllocations = allocations.filter((a) => a.dealer_id === dealer.id);
+        const dealerPayments = payments.filter(
+          (p) => p.party_type === 'DEALER' && p.party_id === dealer.id && !p.is_reversed
+        );
+        const totalBilled = dealerAllocations.reduce((sum, a) => sum + (a.charge_amount || 0), 0);
+        const totalReceived = dealerPayments
+          .filter((p) => p.kind === 'DEALER_RECEIPT')
+          .reduce((sum, p) => sum + p.amount, 0);
+        const balanceDue = totalBilled - totalReceived;
+        const dealerSites = sites.filter((s) => s.dealer_id === dealer.id);
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-4xl max-h-[92vh] shadow-2xl overflow-hidden flex flex-col animate-slide-up font-sans">
+              {/* Header */}
+              <div className="p-5 border-b border-zinc-800 flex items-start justify-between bg-zinc-950">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-zinc-850 text-zinc-200 border border-zinc-750">
+                        {dealer.code}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-950 text-emerald-300 border border-emerald-800">
+                        Client Contractor / Dealer
+                      </span>
+                    </div>
+                    <h2 className="text-xl font-black text-white tracking-tight mt-1">{dealer.name}</h2>
+                    <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono mt-0.5">
+                      {dealer.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-zinc-500" /> {dealer.phone}
+                        </span>
+                      )}
+                      {dealer.address && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-zinc-500" /> {dealer.address}
+                        </span>
+                      )}
+                      <span className="text-zinc-300 font-bold">Billing Rate: ₹{dealer.default_rate}/day</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/reports?partyId=${dealer.id}&partyType=DEALER`}
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-mono font-semibold border border-zinc-700 transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Full Subledger
+                  </Link>
+                  <button
+                    onClick={() => setSelectedHistoryDealer(null)}
+                    className="p-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Financial Balance Strip */}
+              <div className="p-4 bg-zinc-950/60 border-b border-zinc-800 grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">Total Work Billed</span>
+                  <strong className="text-base font-black font-mono text-white block mt-0.5">{formatINR(totalBilled)}</strong>
+                  <span className="text-[10px] text-zinc-500 font-mono">{dealerAllocations.length} Shifts Supplied</span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 block">Total Receipts Received</span>
+                  <strong className="text-base font-black font-mono text-emerald-400 block mt-0.5">+{formatINR(totalReceived)}</strong>
+                  <span className="text-[10px] text-zinc-500 font-mono">{dealerPayments.length} Payments Received</span>
+                </div>
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-300 block">Balance Due</span>
+                  <strong className={`text-base font-black font-mono block mt-0.5 ${balanceDue > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {formatINR(balanceDue)}
+                  </strong>
+                  <span className="text-[10px] text-zinc-500 font-mono">{balanceDue > 0 ? 'Receivable from Client' : 'Settled'}</span>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-2 px-5 pt-3 border-b border-zinc-800 bg-zinc-900 text-xs font-mono">
+                <button
+                  onClick={() => setDealerHistoryTab('WORK')}
+                  className={`pb-2.5 px-3 font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                    dealerHistoryTab === 'WORK'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <HardHat className="w-3.5 h-3.5" />
+                  <span>Labour Shifts Supplied ({dealerAllocations.length})</span>
+                </button>
+                <button
+                  onClick={() => setDealerHistoryTab('PAYMENTS')}
+                  className={`pb-2.5 px-3 font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                    dealerHistoryTab === 'PAYMENTS'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  <span>Payment Receipts ({dealerPayments.length})</span>
+                </button>
+              </div>
+
+              {/* Tab Content Body */}
+              <div className="p-5 overflow-y-auto flex-1 space-y-4">
+                {dealerHistoryTab === 'WORK' && (
+                  <div>
+                    {dealerAllocations.length === 0 ? (
+                      <div className="py-12 text-center text-zinc-400">
+                        <HardHat className="w-9 h-9 mx-auto text-zinc-600 mb-2" />
+                        <p className="text-sm font-semibold text-zinc-300">No worker shifts assigned yet</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">Use the "Send Worker" button on this dealer card to allocate labour.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-zinc-950 text-zinc-400 font-mono font-semibold uppercase text-[10px]">
+                            <tr className="border-b border-zinc-800">
+                              <th className="p-3">Work Date</th>
+                              <th className="p-3">Worker Name</th>
+                              <th className="p-3">Site</th>
+                              <th className="p-3">Shift</th>
+                              <th className="p-3 text-right">Billing Rate</th>
+                              <th className="p-3 text-right">Charge Amount</th>
+                              <th className="p-3">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-800/60 font-sans">
+                            {dealerAllocations.map((a) => (
+                              <tr key={a.id} className="hover:bg-zinc-850/50 transition-colors">
+                                <td className="p-3 font-mono text-zinc-300 font-bold">{a.work_date}</td>
+                                <td className="p-3">
+                                  <div className="font-bold text-white">{a.worker_name || 'Worker'}</div>
+                                  <span className="text-[10px] text-zinc-400 font-mono block">{a.worker_skill || 'Worker'}</span>
+                                </td>
+                                <td className="p-3 text-zinc-300">{a.site_name || 'Main Site'}</td>
+                                <td className="p-3 font-mono">
+                                  <span className="px-2 py-0.5 rounded bg-zinc-800 text-white text-[10px] font-bold">
+                                    {a.attendance} ({a.units} Day)
+                                  </span>
+                                </td>
+                                <td className="p-3 text-right font-mono text-zinc-300">₹{a.selling_rate}/day</td>
+                                <td className="p-3 text-right font-mono font-bold text-white">₹{a.charge_amount}</td>
+                                <td className="p-3 text-zinc-400 text-[11px] max-w-xs truncate">{a.notes || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {dealerHistoryTab === 'PAYMENTS' && (
+                  <div>
+                    {dealerPayments.length === 0 ? (
+                      <div className="py-12 text-center text-zinc-400">
+                        <IndianRupee className="w-9 h-9 mx-auto text-zinc-600 mb-2" />
+                        <p className="text-sm font-semibold text-zinc-300">No payment receipts recorded yet</p>
+                        <p className="text-xs text-zinc-500 mt-0.5">Click "Receipt" on the dealer card to record payments received.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-zinc-950 text-zinc-400 font-mono font-semibold uppercase text-[10px]">
+                            <tr className="border-b border-zinc-800">
+                              <th className="p-3">Receipt Date</th>
+                              <th className="p-3">Voucher #</th>
+                              <th className="p-3">Mode & UTR / Ref</th>
+                              <th className="p-3 text-right">Amount Received</th>
+                              <th className="p-3">Notes</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-800/60 font-sans">
+                            {dealerPayments.map((p) => (
+                              <tr key={p.id} className="hover:bg-zinc-850/50 transition-colors">
+                                <td className="p-3 font-mono font-bold text-white">{p.payment_date}</td>
+                                <td className="p-3 font-mono text-zinc-300">{p.receipt_number}</td>
+                                <td className="p-3 font-mono text-zinc-300">
+                                  <span className="px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] font-bold">
+                                    {p.method}
+                                  </span>
+                                  {p.reference && <span className="text-zinc-400 text-[10px] ml-1.5">Ref: {p.reference}</span>}
+                                </td>
+                                <td className="p-3 text-right font-mono font-black text-emerald-400 text-sm">
+                                  +{formatINR(p.amount)}
+                                </td>
+                                <td className="p-3 text-zinc-300 text-[11px] max-w-xs truncate">{p.note || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between font-mono">
+                <Link
+                  href={`/reports?partyId=${dealer.id}&partyType=DEALER`}
+                  className="inline-flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white underline underline-offset-4"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Open Complete Double-Entry Subledger Statement
+                </Link>
+                <button
+                  onClick={() => setSelectedHistoryDealer(null)}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wider transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

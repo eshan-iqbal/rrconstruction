@@ -19,7 +19,8 @@ import {
   Moon,
   LogOut,
   UserCheck,
-  KeyRound
+  KeyRound,
+  Building
 } from 'lucide-react';
 import { useSqlStore, MultiWorkerItem } from '@/lib/storage/useSqlStore';
 import { useTheme } from '@/lib/theme/ThemeContext';
@@ -56,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  const { dealers, sites, workers, metrics, sendMultiWorkers } = useSqlStore();
+  const { companyProfile, dealers, sites, workers, metrics, sendMultiWorkers } = useSqlStore();
 
   // Quick Dispatch Form State
   const [dispatchDate, setDispatchDate] = useState(getTodayDate);
@@ -181,13 +182,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#09090b] text-zinc-100 antialiased font-sans selection:bg-white selection:text-black">
       {/* Mobile Native App Top Bar */}
       <header className="lg:hidden flex items-center justify-between px-3.5 py-2.5 bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800/80 sticky top-0 z-40">
-        <div className="flex items-center gap-2.5">
-          <Link href="/" className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-sm touch-press">
-            <span className="text-xs tracking-tighter font-mono font-black">RR</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Link href="/" className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-sm touch-press shrink-0">
+            <span className="text-xs tracking-tighter font-mono font-black">{companyProfile?.short_name || 'RR'}</span>
           </Link>
-          <div>
-            <div className="font-bold text-xs tracking-tight text-white">
-              RR CONSTRUCTION
+          <div className="min-w-0">
+            <div className="font-bold text-xs tracking-tight text-white truncate">
+              {companyProfile?.name || 'RR CONSTRUCTION'}
             </div>
             <div className="text-[10px] text-zinc-400 font-mono flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -196,7 +197,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={toggleTheme}
             className="p-1.5 rounded-lg bg-zinc-900 text-zinc-300 hover:text-white border border-zinc-800 touch-press transition-colors"
@@ -231,23 +232,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar for Desktop & Slide-in Drawer for Mobile */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#09090b] border-r border-zinc-850 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#09090b] border-r border-zinc-850 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0 ${
           mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
         style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
       >
-        <div className="flex flex-col">
+        <div className="flex flex-col flex-1 overflow-y-auto min-h-0">
           {/* Brand Header */}
-          <div className="p-5 border-b border-zinc-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-md">
-                <span className="text-sm tracking-tight font-mono font-black">RR</span>
+          <div className="p-5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black shadow-md shrink-0">
+                <span className="text-sm tracking-tight font-mono font-black">{companyProfile?.short_name || 'RR'}</span>
               </div>
-              <div>
-                <h1 className="font-extrabold text-sm tracking-wider uppercase text-white">
-                  RR Construction
+              <div className="min-w-0">
+                <h1 className="font-extrabold text-sm tracking-wider uppercase text-white truncate max-w-[150px]">
+                  {companyProfile?.name || 'RR Construction'}
                 </h1>
-                <p className="text-[11px] text-zinc-400 font-medium">Labour Supplier</p>
+                <p className="text-[11px] text-zinc-400 font-medium truncate max-w-[150px]">
+                  {companyProfile?.tagline || 'Labour Supplier'}
+                </p>
               </div>
             </div>
             {/* Mobile close drawer button */}
@@ -260,23 +263,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Quick Dispatch CTA Button */}
-          <div className="p-4 pb-3">
+          <div className="p-4 pb-2 shrink-0">
             <button
               onClick={() => {
                 setDispatchDate(getTodayDate());
                 setMobileMenuOpen(false);
                 setIsQuickDispatchOpen(true);
               }}
-              className="w-full flex items-center justify-center gap-2 py-3 px-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-mono font-bold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-mono font-bold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95"
             >
               <SendHorizontal className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Send Multi Workers</span>
+              <span>Send Multi Workers</span>
             </button>
           </div>
 
           {/* Navigation Links */}
-          <nav className="p-4 pt-2 space-y-1.5">
-            <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-bold mb-1">
+          <nav className="p-4 pt-1 space-y-1">
+            <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-bold mb-1">
               Navigation Menu
             </div>
             {DESKTOP_NAV_ITEMS.map((item) => {
@@ -319,7 +322,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Sidebar Footer: Theme Toggle (Top) & User Profile with Actions (Bottom) */}
-        <div className="p-4 border-t border-zinc-800/80 space-y-2.5">
+        <div className="p-4 border-t border-zinc-800/80 space-y-2 shrink-0">
           {/* Theme Toggle (Above) */}
           <button
             type="button"
@@ -341,22 +344,42 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </button>
 
-          {/* User Profile Card (Below) with Change Password & Logout */}
+          {/* User Profile Card (Below) with Company Profile, Change Password & Logout */}
           {session?.user && (
-            <div className="p-2.5 rounded-2xl bg-zinc-950/80 border border-zinc-850 flex items-center justify-between">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-zinc-850 border border-zinc-700/80 flex items-center justify-center font-bold text-xs font-mono text-white shrink-0">
-                  {session.user.name?.charAt(0).toUpperCase() || 'U'}
+            <div className="p-2.5 rounded-2xl bg-zinc-950/80 border border-zinc-850 flex items-center justify-between gap-2">
+              <Link
+                href="/company"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition-opacity group cursor-pointer"
+                title="Open Company Profile & Letterhead"
+              >
+                <div className="w-8 h-8 rounded-xl bg-zinc-850 border border-zinc-700/80 flex items-center justify-center font-bold text-xs font-mono text-white shrink-0 group-hover:border-amber-500/60 group-hover:text-amber-400 transition-colors">
+                  {companyProfile?.short_name ? companyProfile.short_name.charAt(0).toUpperCase() : (session.user.name?.charAt(0).toUpperCase() || 'R')}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-white truncate">{session.user.name}</div>
+                  <div className="text-xs font-bold text-white truncate group-hover:text-amber-400 transition-colors">
+                    {companyProfile?.name || session.user.name || 'RR Construction'}
+                  </div>
                   <div className="text-[10px] text-zinc-400 font-mono truncate">
-                    @{(session.user as any).username || 'user'} • {(session.user as any).role || 'OWNER'}
+                    @{(session.user as any).username || 'rrconstruction'} • {(session.user as any).role || 'OWNER'}
                   </div>
                 </div>
-              </div>
+              </Link>
 
               <div className="flex items-center gap-1 shrink-0">
+                <Link
+                  href="/company"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    pathname === '/company'
+                      ? 'text-white bg-zinc-800 border border-zinc-700'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
+                  }`}
+                  title="Company Profile & Letterhead"
+                  aria-label="Company Profile"
+                >
+                  <Building className="w-4 h-4" />
+                </Link>
                 <button
                   type="button"
                   onClick={() => setIsChangePasswordOpen(true)}

@@ -19,20 +19,37 @@ import {
   Sparkles,
   Pencil,
   Trash2,
-  Loader2
+  Loader2,
+  Eye,
+  MapPin,
+  Phone,
+  HardHat,
+  Landmark,
+  QrCode,
+  X,
+  ChevronRight,
+  ExternalLink,
+  History,
+  ShieldCheck,
+  Briefcase
 } from 'lucide-react';
 import { useSqlStore, Payment } from '@/lib/storage/useSqlStore';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
+import PartyHistoryModal from '@/components/ui/PartyHistoryModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 
 export default function PaymentsPage() {
-  const { dealers, workers, payments, recordPayment, editPayment, deletePayment, loading } = useSqlStore();
+  const { dealers, sites, workers, allocations, payments, recordPayment, editPayment, deletePayment, loading } = useSqlStore();
   const { toast } = useToast();
 
   const [filterPartyType, setFilterPartyType] = useState<'ALL' | 'DEALER' | 'WORKER'>('ALL');
   const [filterKind, setFilterKind] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Party Details Modal State (When clicking on any Dealer or Worker)
+  const [selectedDetailParty, setSelectedDetailParty] = useState<{ type: 'DEALER' | 'WORKER'; id: string } | null>(null);
+  const [partyDetailTab, setPartyDetailTab] = useState<'WORK' | 'PAYMENTS' | 'KYC'>('WORK');
 
   // Record Payment Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -176,6 +193,47 @@ export default function PaymentsPage() {
     }
   };
 
+  // Financial Cashflow Computations
+  const nonReversedPayments = payments.filter((p) => !p.is_reversed);
+
+  // Inflow (Money In): Dealer Receipts
+  const totalInflow = nonReversedPayments
+    .filter((p) => p.kind === 'DEALER_RECEIPT')
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const inflowCount = nonReversedPayments.filter((p) => p.kind === 'DEALER_RECEIPT').length;
+
+  // Outflows (Money Out / Spent):
+  const totalWagesPaid = nonReversedPayments
+    .filter((p) => p.kind === 'WORKER_PAYOUT')
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const totalAdvancesPaid = nonReversedPayments
+    .filter((p) => p.kind === 'WORKER_ADVANCE')
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const totalRefundsPaid = nonReversedPayments
+    .filter((p) => p.kind === 'DEALER_REFUND')
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const totalOutflow = totalWagesPaid + totalAdvancesPaid + totalRefundsPaid;
+  const outflowCount = nonReversedPayments.filter((p) => p.kind !== 'DEALER_RECEIPT').length;
+
+  const netCashflow = totalInflow - totalOutflow;
+
+  // Mode breakdown
+  const cashIn = nonReversedPayments.filter((p) => p.kind === 'DEALER_RECEIPT' && p.method === 'CASH').reduce((s, p) => s + p.amount, 0);
+  const cashOut = nonReversedPayments.filter((p) => p.kind !== 'DEALER_RECEIPT' && p.method === 'CASH').reduce((s, p) => s + p.amount, 0);
+  const netCash = cashIn - cashOut;
+
+  const upiIn = nonReversedPayments.filter((p) => p.kind === 'DEALER_RECEIPT' && p.method === 'UPI').reduce((s, p) => s + p.amount, 0);
+  const upiOut = nonReversedPayments.filter((p) => p.kind !== 'DEALER_RECEIPT' && p.method === 'UPI').reduce((s, p) => s + p.amount, 0);
+  const netUpi = upiIn - upiOut;
+
+  const bankIn = nonReversedPayments.filter((p) => p.kind === 'DEALER_RECEIPT' && p.method === 'BANK').reduce((s, p) => s + p.amount, 0);
+  const bankOut = nonReversedPayments.filter((p) => p.kind !== 'DEALER_RECEIPT' && p.method === 'BANK').reduce((s, p) => s + p.amount, 0);
+  const netBank = bankIn - bankOut;
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -188,44 +246,217 @@ export default function PaymentsPage() {
             {loading ? (
               <Skeleton className="w-28 h-4 rounded bg-zinc-800" />
             ) : (
-              <span className="text-xs text-zinc-400 font-mono">Layerbase Cloud • {payments.length} Vouchers</span>
+              <span className="text-xs text-zinc-400 font-mono">Neon Cloud • {payments.length} Vouchers</span>
             )}
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Payments & Subledger Vouchers</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Payments & Cashflow Tracker</h1>
           <p className="text-xs text-zinc-400">
-            Record dealer payments received, worker wage disbursements, and cash advances with real-time double-entry subledger posting.
+            Real-time breakdown of where money came from (Dealer Receipts) and where money was spent (Worker Wages & Advances).
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap font-mono">
           <button
             onClick={() => handleOpenModal('DEALER', 'DEALER_RECEIPT')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm active:scale-95"
           >
-            <ArrowDownRight className="w-4 h-4 stroke-[2.5]" /> + Dealer Receipt
+            <ArrowDownRight className="w-4 h-4 stroke-[2.5]" /> + Receive Dealer Payment
           </button>
           <button
             onClick={() => handleOpenModal('WORKER', 'WORKER_PAYOUT')}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs uppercase tracking-wide border border-zinc-700 transition-all active:scale-95"
           >
-            <ArrowUpRight className="w-4 h-4" /> - Pay Worker Wage
+            <ArrowUpRight className="w-4 h-4" /> Pay Worker Wage
           </button>
           <button
             onClick={() => handleOpenModal('WORKER', 'WORKER_ADVANCE')}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-950 hover:bg-zinc-850 text-zinc-300 hover:text-white font-bold text-xs uppercase tracking-wide border border-zinc-800 transition-all active:scale-95"
           >
-            <CreditCard className="w-4 h-4" /> + Cash Advance
+            <CreditCard className="w-4 h-4" /> Cash Advance
           </button>
         </div>
       </div>
 
-      {/* Notification */}
-      {feedback && (
-        <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-700 text-white text-xs font-mono flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-white" />
-          <span>{feedback}</span>
+      {/* 4 Primary Cash Flow & Money Movement Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Money Received (Inflow) */}
+        <div className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl space-y-3 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Money In (Received)
+            </span>
+            {loading ? (
+              <Skeleton className="w-16 h-4 rounded bg-zinc-800" />
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/60 border border-emerald-800/60 text-emerald-300">
+                {inflowCount} Receipts
+              </span>
+            )}
+          </div>
+          <div>
+            {loading ? (
+              <div className="space-y-1.5 my-1">
+                <Skeleton className="w-32 h-8 rounded bg-zinc-800" />
+                <Skeleton className="w-44 h-3 rounded bg-zinc-800" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-black font-mono text-emerald-400 tracking-tight">
+                  +{formatINR(totalInflow)}
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1 font-sans">
+                  Total collected from Client Dealers
+                </p>
+              </>
+            )}
+          </div>
+          <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[10px] font-mono text-zinc-400">
+            {loading ? (
+              <Skeleton className="w-full h-3 rounded bg-zinc-800" />
+            ) : (
+              <>
+                <span>UPI: ₹{upiIn.toLocaleString('en-IN')}</span>
+                <span>Cash: ₹{cashIn.toLocaleString('en-IN')}</span>
+                <span>Bank: ₹{bankIn.toLocaleString('en-IN')}</span>
+              </>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Card 2: Total Money Spent (Outflow) */}
+        <div className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl space-y-3 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-400" />
+              Money Out (Spent)
+            </span>
+            {loading ? (
+              <Skeleton className="w-16 h-4 rounded bg-zinc-800" />
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-950/60 border border-rose-800/60 text-rose-300">
+                {outflowCount} Vouchers
+              </span>
+            )}
+          </div>
+          <div>
+            {loading ? (
+              <div className="space-y-1.5 my-1">
+                <Skeleton className="w-32 h-8 rounded bg-zinc-800" />
+                <Skeleton className="w-44 h-3 rounded bg-zinc-800" />
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-black font-mono text-rose-400 tracking-tight">
+                  -{formatINR(totalOutflow)}
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1 font-sans">
+                  Wages Paid & Cash Advances
+                </p>
+              </>
+            )}
+          </div>
+          <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[10px] font-mono text-zinc-400">
+            {loading ? (
+              <Skeleton className="w-full h-3 rounded bg-zinc-800" />
+            ) : (
+              <>
+                <span>Wages: ₹{totalWagesPaid.toLocaleString('en-IN')}</span>
+                <span>Advances: ₹{totalAdvancesPaid.toLocaleString('en-IN')}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Card 3: Net Cash Balance */}
+        <div className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl space-y-3 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+              <IndianRupee className="w-3.5 h-3.5 text-white" />
+              Net Retained Cash
+            </span>
+            {loading ? (
+              <Skeleton className="w-14 h-4 rounded bg-zinc-800" />
+            ) : (
+              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                netCashflow >= 0 ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'
+              }`}>
+                {netCashflow >= 0 ? 'Surplus' : 'Deficit'}
+              </span>
+            )}
+          </div>
+          <div>
+            {loading ? (
+              <div className="space-y-1.5 my-1">
+                <Skeleton className="w-28 h-8 rounded bg-zinc-800" />
+                <Skeleton className="w-44 h-3 rounded bg-zinc-800" />
+              </div>
+            ) : (
+              <>
+                <div className={`text-2xl font-black font-mono tracking-tight ${
+                  netCashflow >= 0 ? 'text-white' : 'text-rose-400'
+                }`}>
+                  {netCashflow >= 0 ? '+' : '-'}{formatINR(netCashflow)}
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-1 font-sans">
+                  (Total Money In − Total Money Out)
+                </p>
+              </>
+            )}
+          </div>
+          <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400">
+            {loading ? (
+              <Skeleton className="w-36 h-3 rounded bg-zinc-800" />
+            ) : (
+              'Operating Net Cashflow Margin'
+            )}
+          </div>
+        </div>
+
+        {/* Card 4: Payment Channels Balance */}
+        <div className="p-5 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xl space-y-3 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-300">
+              Payment Channels
+            </span>
+            {loading ? (
+              <Skeleton className="w-16 h-4 rounded bg-zinc-800" />
+            ) : (
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300">
+                Live Splits
+              </span>
+            )}
+          </div>
+          {loading ? (
+            <div className="space-y-2 py-1 font-mono text-xs">
+              <Skeleton className="w-full h-3.5 rounded bg-zinc-800" />
+              <Skeleton className="w-full h-3.5 rounded bg-zinc-800" />
+              <Skeleton className="w-full h-3.5 rounded bg-zinc-800" />
+            </div>
+          ) : (
+            <div className="space-y-1.5 font-mono text-xs">
+              <div className="flex items-center justify-between text-zinc-200">
+                <span className="text-zinc-400 text-[11px]">💵 Cash In Hand:</span>
+                <strong className={netCash >= 0 ? 'text-white' : 'text-rose-400'}>
+                  {netCash >= 0 ? '+' : '-'}{formatINR(netCash)}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between text-zinc-200">
+                <span className="text-zinc-400 text-[11px]">📱 UPI / QR:</span>
+                <strong className={netUpi >= 0 ? 'text-white' : 'text-rose-400'}>
+                  {netUpi >= 0 ? '+' : '-'}{formatINR(netUpi)}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between text-zinc-200">
+                <span className="text-zinc-400 text-[11px]">🏦 Bank Wire:</span>
+                <strong className={netBank >= 0 ? 'text-white' : 'text-rose-400'}>
+                  {netBank >= 0 ? '+' : '-'}{formatINR(netBank)}
+                </strong>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Filter Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-zinc-900 border border-zinc-800">
@@ -257,7 +488,7 @@ export default function PaymentsPage() {
                 filterPartyType === 'DEALER' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Dealers
+              Dealers (Inflow)
             </button>
             <button
               onClick={() => setFilterPartyType('WORKER')}
@@ -265,7 +496,7 @@ export default function PaymentsPage() {
                 filterPartyType === 'WORKER' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Workers
+              Workers (Outflow)
             </button>
           </div>
 
@@ -277,10 +508,10 @@ export default function PaymentsPage() {
               className="px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-white font-sans"
             >
               <option value="ALL">All Transaction Types</option>
-              <option value="DEALER_RECEIPT">Dealer Receipt (Inflow)</option>
-              <option value="WORKER_PAYOUT">Worker Wage Payout (Outflow)</option>
-              <option value="WORKER_ADVANCE">Worker Cash Advance (Outflow)</option>
-              <option value="DEALER_REFUND">Dealer Refund (Outflow)</option>
+              <option value="DEALER_RECEIPT">Dealer Receipt (Inflow +)</option>
+              <option value="WORKER_PAYOUT">Worker Wage Payout (Outflow −)</option>
+              <option value="WORKER_ADVANCE">Worker Cash Advance (Outflow −)</option>
+              <option value="DEALER_REFUND">Dealer Refund (Outflow −)</option>
             </select>
           </div>
         </div>
@@ -293,11 +524,11 @@ export default function PaymentsPage() {
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-950 text-zinc-400 font-mono font-semibold uppercase tracking-wider text-[11px]">
                 <th className="p-3.5">Date & Voucher #</th>
-                <th className="p-3.5">Party / Ledger Account</th>
-                <th className="p-3.5">Transaction Type</th>
-                <th className="p-3.5">Payment Mode & Ref</th>
+                <th className="p-3.5">Source / Destination (From / To)</th>
+                <th className="p-3.5">Flow Direction & Type</th>
+                <th className="p-3.5">Payment Channel</th>
                 <th className="p-3.5 text-right">Amount (INR)</th>
-                <th className="p-3.5">Notes</th>
+                <th className="p-3.5">Notes / Purpose</th>
                 <th className="p-3.5 text-center">Actions</th>
               </tr>
             </thead>
@@ -334,65 +565,108 @@ export default function PaymentsPage() {
                         <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">{p.receipt_number}</span>
                       </td>
 
-                      {/* Party */}
+                      {/* Party - From / To */}
                       <td className="p-3.5">
-                        <div className="font-bold text-white text-sm flex items-center gap-1.5">
-                          {p.party_type === 'DEALER' ? (
-                            <Building2 className="w-3.5 h-3.5 text-zinc-400" />
-                          ) : (
-                            <Users className="w-3.5 h-3.5 text-zinc-400" />
-                          )}
-                          {p.party_name || 'Party'}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-zinc-400">
+                            {isIncoming ? 'FROM' : 'TO'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailParty({ type: p.party_type, id: p.party_id })}
+                            className="font-bold text-white text-sm flex items-center gap-1.5 hover:text-emerald-400 transition-colors text-left group cursor-pointer"
+                            title="Click to view full work shift & payment history"
+                          >
+                            {p.party_type === 'DEALER' ? (
+                              <Building2 className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-400" />
+                            ) : (
+                              <Users className="w-3.5 h-3.5 text-zinc-400 group-hover:text-emerald-400" />
+                            )}
+                            <span className="underline decoration-zinc-700 group-hover:decoration-emerald-400 underline-offset-2">
+                              {p.party_name || 'Party'}
+                            </span>
+                            <Eye className="w-3 h-3 text-zinc-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+                          </button>
                         </div>
-                        <span className="text-[10px] text-zinc-400 font-mono">
+                        <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">
                           {p.party_code ? `${p.party_code} • ` : ''}{p.party_type} SUBLEDGER
                         </span>
                       </td>
 
-                      {/* Payment Type */}
+                      {/* Flow Direction & Type */}
                       <td className="p-3.5">
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                          className={`inline-flex items-center gap-1.5 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg ${
                             isIncoming
-                              ? 'bg-white text-black'
+                              ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/80'
                               : p.kind === 'WORKER_ADVANCE'
-                              ? 'bg-zinc-950 text-zinc-200 border border-zinc-700'
-                              : 'bg-zinc-800 text-zinc-200 border border-zinc-700'
+                              ? 'bg-amber-950/80 text-amber-300 border border-amber-800/80'
+                              : 'bg-rose-950/80 text-rose-300 border border-rose-800/80'
                           }`}
                         >
                           {isIncoming ? (
-                            <ArrowDownRight className="w-3 h-3 stroke-[2.5]" />
+                            <>
+                              <ArrowDownRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>INFLOW • RECEIPT</span>
+                            </>
+                          ) : p.kind === 'WORKER_ADVANCE' ? (
+                            <>
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>OUTFLOW • ADVANCE</span>
+                            </>
                           ) : (
-                            <ArrowUpRight className="w-3 h-3" />
+                            <>
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                              <span>OUTFLOW • WAGE PAYOUT</span>
+                            </>
                           )}
-                          {p.kind.replace(/_/g, ' ')}
                         </span>
                       </td>
 
                       {/* Method & Ref */}
-                      <td className="p-3.5 font-mono text-zinc-300">
-                        <span className="bg-zinc-950 border border-zinc-800 px-2 py-0.5 rounded text-[10px] font-semibold text-zinc-200">
-                          {p.method}
-                        </span>
+                      <td className="p-3.5 font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            p.method === 'CASH'
+                              ? 'bg-amber-950/40 border-amber-800/50 text-amber-300'
+                              : p.method === 'UPI'
+                              ? 'bg-purple-950/40 border-purple-800/50 text-purple-300'
+                              : 'bg-blue-950/40 border-blue-800/50 text-blue-300'
+                          }`}>
+                            {p.method}
+                          </span>
+                        </div>
                         {p.reference && (
-                          <div className="text-[10px] text-zinc-500 mt-1 truncate max-w-[150px]">Ref: {p.reference}</div>
+                          <div className="text-[10px] text-zinc-400 mt-1 truncate max-w-[150px]">
+                            Ref: <span className="text-zinc-200">{p.reference}</span>
+                          </div>
                         )}
                       </td>
 
-                      {/* Amount */}
-                      <td className="p-3.5 text-right font-mono font-bold text-sm">
-                        <span className="text-white">
-                          {isIncoming ? '+' : '-'}
+                      {/* Amount with Color Coding */}
+                      <td className="p-3.5 text-right font-mono font-black text-sm">
+                        <span className={isIncoming ? 'text-emerald-400' : 'text-rose-400'}>
+                          {isIncoming ? '+' : '−'}
                           {formatINR(p.amount)}
                         </span>
                       </td>
 
                       {/* Note */}
-                      <td className="p-3.5 text-zinc-400 text-[11px] max-w-xs truncate">{p.note || '-'}</td>
+                      <td className="p-3.5 text-zinc-300 text-[11px] max-w-xs truncate">
+                        {p.note || (isIncoming ? `Receipt from ${p.party_name}` : `Disbursement to ${p.party_name}`)}
+                      </td>
 
-                      {/* Action -> Edit / Delete / Ledger */}
+                      {/* Action -> View Details / Edit / Delete / Ledger */}
                       <td className="p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1.5 font-mono">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailParty({ type: p.party_type, id: p.party_id })}
+                            title="View Full Work & Payment History"
+                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-emerald-950/80 text-zinc-300 hover:text-emerald-400 border border-zinc-700 hover:border-emerald-800 transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             onClick={() => handleOpenEditPayment(p)}
                             title="Edit Voucher"
@@ -611,8 +885,8 @@ export default function PaymentsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm disabled:opacity-50"
+                  disabled={!selectedPartyId || amount === '' || Number(amount) <= 0 || !paymentDate || isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Posting...' : 'Post to Ledger'}
                 </button>
@@ -737,8 +1011,8 @@ export default function PaymentsPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                  disabled={!editingPayment || editAmount === '' || Number(editAmount) <= 0 || !editPaymentDate || isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {isSubmitting ? 'Updating...' : 'Update Voucher & Ledger'}
@@ -761,6 +1035,15 @@ export default function PaymentsPage() {
         onConfirm={handleConfirmDeletePayment}
         onClose={() => setPaymentToDelete(null)}
       />
+
+      {/* Party Details & History Modal (When clicking on any Dealer or Worker) */}
+      {selectedDetailParty && (
+        <PartyHistoryModal
+          partyType={selectedDetailParty.type}
+          partyId={selectedDetailParty.id}
+          onClose={() => setSelectedDetailParty(null)}
+        />
+      )}
     </div>
   );
 }

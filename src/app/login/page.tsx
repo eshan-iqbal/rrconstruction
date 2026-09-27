@@ -8,18 +8,16 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  CheckCircle2,
-  AlertCircle,
   Shield
 } from 'lucide-react';
 import { signIn } from '@/lib/auth/auth-client';
+import { useToast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Form Fields
   const [username, setUsername] = useState('');
@@ -28,52 +26,32 @@ export default function LoginPage() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setSuccessMessage(null);
 
     if (!username.trim() || !password) {
-      setErrorMessage('Please enter both username and password.');
+      toast.warning('Please enter both username and password.', 'Required Credentials');
       return;
     }
 
     try {
       setLoading(true);
-      const identifier = username.trim();
-      let res: any;
-
-      if (identifier.includes('@')) {
-        res = await (signIn as any).email({
-          email: identifier.toLowerCase(),
-          password,
-        });
-      } else {
-        res = await signIn.username({
-          username: identifier.toLowerCase(),
-          password,
-        });
-
-        // Fallback check if user entered username as email prefix
-        if (res?.error) {
-          const emailRes = await (signIn as any).email({
-            email: `${identifier.toLowerCase()}@rrconstruction.app`,
-            password,
-          });
-          if (!emailRes?.error) {
-            res = emailRes;
-          }
-        }
-      }
+      const res = await signIn.username({
+        username: username.trim(),
+        password,
+      });
 
       if (res?.error) {
-        setErrorMessage(res.error.message || 'Invalid username or password.');
+        const errorMsg = res.error.message || 'Invalid username or password. Please try again.';
+        toast.error(errorMsg, 'Access Denied');
       } else {
-        setSuccessMessage('Authentication successful! Redirecting...');
+        const welcomeMsg = 'Welcome back! Authentication successful. Redirecting...';
+        toast.success(welcomeMsg, 'Access Granted');
         setTimeout(() => {
           window.location.href = '/';
-        }, 500);
+        }, 300);
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Error signing in. Please check your credentials.');
+      const errMsg = err?.message || 'Error signing in. Please check your credentials.';
+      toast.error(errMsg, 'Login Error');
     } finally {
       setLoading(false);
     }
@@ -111,24 +89,8 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Error Message Notice */}
-          {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-900/50 flex items-start justify-center gap-3 text-xs text-rose-200 animate-in fade-in text-center">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* Success Message Notice */}
-          {successMessage && (
-            <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-900/50 flex items-start justify-center gap-3 text-xs text-emerald-200 animate-in fade-in font-mono text-center">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
           {/* Sign In Form */}
-          <form onSubmit={handleSignIn} className="space-y-4">
+          <form onSubmit={handleSignIn} noValidate className="space-y-4">
             <div>
               <label className="block text-center text-xs font-semibold text-zinc-300 mb-1.5 font-mono">
                 Username
@@ -137,7 +99,6 @@ export default function LoginPage() {
                 <User className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  required
                   placeholder="e.g. rrconstruction"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -156,7 +117,6 @@ export default function LoginPage() {
                 <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  required
                   placeholder="Enter your password..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

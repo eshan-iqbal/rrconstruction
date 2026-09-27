@@ -77,8 +77,32 @@ export async function GET() {
     const totalReceivable = Math.max(0, Number(dealerTotals.total_debit) - Number(dealerTotals.total_credit));
     const totalWagePayable = Math.max(0, Number(workerTotals.total_wages) - Number(workerTotals.total_payouts));
 
+    const companiesRes = await pool.query('SELECT * FROM company_profile ORDER BY is_default DESC, created_at ASC');
+    const fallbackCompany = {
+      id: 'default',
+      name: 'RR CONSTRUCTION',
+      short_name: 'RR',
+      tagline: 'Labour Suppliers & Civil Infrastructure Contractors',
+      est_year: 'EST. 2018',
+      gstin: '07AABCR8892F1Z4',
+      phone: '+91 98765 43210',
+      email: 'accounts@rrconstruction.in',
+      address: 'Civil Lines, Sector 62, Noida, Delhi NCR - 201301',
+      website: 'https://rrconstruction.in',
+      authorized_signatory: 'FOR RR CONSTRUCTION',
+      statement_title: 'STATEMENT OF SUBLEDGER ACCOUNT',
+      statement_subtitle: 'Double-Entry Verified & Reconciled',
+      terms_notes: 'Certified official subledger statement issued by RR Construction. Verified under double-entry accounting rules.',
+      is_active: 1,
+      is_default: 1
+    };
+    const companies = companiesRes.rows.length > 0 ? companiesRes.rows : [fallbackCompany];
+    const companyProfile = companies.find(c => c.is_default === 1) || companies[0];
+
     return NextResponse.json({
       success: true,
+      companies,
+      companyProfile,
       dealers: dealersRes.rows,
       sites: sitesRes.rows,
       workers: workersRes.rows,
@@ -107,22 +131,29 @@ export async function POST(req: Request) {
 
     // 1. ADD DEALER
     if (action === 'ADD_DEALER') {
-      const { name, phone, address, default_rate = 900 } = body.data;
-      const countRes = await pool.query('SELECT COUNT(*) as cnt FROM dealers');
-      const count = parseInt(countRes.rows[0].cnt, 10) || 0;
-      const code = `DLR-${String(count + 1).padStart(3, '0')}`;
+      const { name, phone, address, default_rate } = body.data;
+      const existingCodesRes = await pool.query('SELECT code FROM dealers');
+      let maxNum = 0;
+      for (const row of existingCodesRes.rows) {
+        const match = String(row.code).match(/DLR-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      const code = `DLR-${String(maxNum + 1).padStart(3, '0')}`;
       const id = randomUUID();
 
       await pool.query(`
         INSERT INTO dealers (id, code, name, phone, address, default_rate)
         VALUES ($1, $2, $3, $4, $5, $6)
-      `, [id, code, name, phone || null, address || null, Number(default_rate) || 900]);
+      `, [id, code, name, phone || null, address || null, Number(default_rate) || 0]);
 
       const siteId = randomUUID();
       await pool.query(`
         INSERT INTO sites (id, dealer_id, name, address)
         VALUES ($1, $2, $3, $4)
-      `, [siteId, id, `${name} Main Site`, address || 'General Location']);
+      `, [siteId, id, `${name} Main Site`, address || 'Main Site']);
 
       return NextResponse.json({ success: true, id, code });
     }
@@ -140,16 +171,63 @@ export async function POST(req: Request) {
 
     // 3. ADD WORKER
     if (action === 'ADD_WORKER') {
-      const { name, phone, skill = 'General Helper', default_wage = 600 } = body.data;
-      const countRes = await pool.query('SELECT COUNT(*) as cnt FROM workers');
-      const count = parseInt(countRes.rows[0].cnt, 10) || 0;
-      const code = `WRK-${String(count + 1).padStart(3, '0')}`;
+      const {
+        name,
+        phone,
+        skill = 'General Helper',
+        default_wage = 600,
+        aadhaar_number,
+        pan_number,
+        voter_id,
+        bank_name,
+        bank_account_number,
+        bank_ifsc,
+        upi_id,
+        father_name,
+        emergency_contact_name,
+        emergency_contact_phone,
+        permanent_address,
+        local_address,
+        gender,
+        blood_group,
+        date_of_birth,
+        joining_date = new Date().toISOString().split('T')[0],
+        notes
+      } = body.data;
+
+      const existingCodesRes = await pool.query('SELECT code FROM workers');
+      let maxNum = 0;
+      for (const row of existingCodesRes.rows) {
+        const match = String(row.code).match(/WRK-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      const code = `WRK-${String(maxNum + 1).padStart(3, '0')}`;
       const id = randomUUID();
 
       await pool.query(`
-        INSERT INTO workers (id, code, name, phone, skill, default_wage)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `, [id, code, name, phone || null, skill, Number(default_wage) || 600]);
+        INSERT INTO workers (
+          id, code, name, phone, skill, default_wage,
+          aadhaar_number, pan_number, voter_id, bank_name, bank_account_number, bank_ifsc, upi_id,
+          father_name, emergency_contact_name, emergency_contact_phone,
+          permanent_address, local_address, gender, blood_group, date_of_birth, joining_date, notes
+        )
+        VALUES (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9, $10, $11, $12, $13,
+          $14, $15, $16,
+          $17, $18, $19, $20, $21, $22, $23
+        )
+      `, [
+        id, code, name, phone || null, skill, Number(default_wage) || 600,
+        aadhaar_number || null, pan_number || null, voter_id || null,
+        bank_name || null, bank_account_number || null, bank_ifsc || null, upi_id || null,
+        father_name || null, emergency_contact_name || null, emergency_contact_phone || null,
+        permanent_address || null, local_address || null, gender || null, blood_group || null,
+        date_of_birth || null, joining_date || null, notes || null
+      ]);
 
       return NextResponse.json({ success: true, id, code });
     }
@@ -264,9 +342,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'Amount must be positive' }, { status: 400 });
       }
 
-      const countRes = await pool.query('SELECT COUNT(*) as cnt FROM payments');
-      const count = parseInt(countRes.rows[0].cnt, 10) || 0;
-      const receiptNumber = `RCP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
+      const currentYear = new Date().getFullYear();
+      const existingReceiptsRes = await pool.query('SELECT receipt_number FROM payments');
+      let maxNum = 0;
+      for (const row of existingReceiptsRes.rows) {
+        const match = String(row.receipt_number).match(new RegExp(`RCP-${currentYear}-(\\d+)`, 'i'));
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      const receiptNumber = `RCP-${currentYear}-${String(maxNum + 1).padStart(4, '0')}`;
       const paymentId = randomUUID();
 
       const client = await pool.connect();
@@ -350,12 +436,83 @@ export async function POST(req: Request) {
 
     // 8. EDIT WORKER
     if (action === 'EDIT_WORKER') {
-      const { id, name, phone, skill, default_wage = 0, is_active = 1 } = body.data;
+      const {
+        id,
+        name,
+        phone,
+        skill,
+        default_wage = 0,
+        is_active = 1,
+        aadhaar_number,
+        pan_number,
+        voter_id,
+        bank_name,
+        bank_account_number,
+        bank_ifsc,
+        upi_id,
+        father_name,
+        emergency_contact_name,
+        emergency_contact_phone,
+        permanent_address,
+        local_address,
+        gender,
+        blood_group,
+        date_of_birth,
+        joining_date,
+        notes
+      } = body.data;
+
       await pool.query(`
         UPDATE workers
-        SET name = $1, phone = $2, skill = $3, default_wage = $4, is_active = $5
-        WHERE id = $6
-      `, [name, phone || null, skill, Number(default_wage) || 0, is_active ? 1 : 0, id]);
+        SET name = $1,
+            phone = $2,
+            skill = $3,
+            default_wage = $4,
+            is_active = $5,
+            aadhaar_number = $6,
+            pan_number = $7,
+            voter_id = $8,
+            bank_name = $9,
+            bank_account_number = $10,
+            bank_ifsc = $11,
+            upi_id = $12,
+            father_name = $13,
+            emergency_contact_name = $14,
+            emergency_contact_phone = $15,
+            permanent_address = $16,
+            local_address = $17,
+            gender = $18,
+            blood_group = $19,
+            date_of_birth = $20,
+            joining_date = $21,
+            notes = $22
+        WHERE id = $23
+      `, [
+        name,
+        phone || null,
+        skill,
+        Number(default_wage) || 0,
+        is_active ? 1 : 0,
+        aadhaar_number || null,
+        pan_number || null,
+        voter_id || null,
+        bank_name || null,
+        bank_account_number || null,
+        bank_ifsc || null,
+        upi_id || null,
+        father_name || null,
+        emergency_contact_name || null,
+        emergency_contact_phone || null,
+        permanent_address || null,
+        local_address || null,
+        gender || null,
+        blood_group || null,
+        date_of_birth || null,
+        joining_date || null,
+        notes || null,
+        id
+      ]);
+
       return NextResponse.json({ success: true, id });
     }
 
@@ -533,6 +690,53 @@ export async function POST(req: Request) {
       }
     }
 
+    // 13.1 ADD MANUAL LEDGER ADJUSTMENT
+    if (action === 'ADD_ADJUSTMENT') {
+      const {
+        party_type,
+        party_id,
+        entry_date = new Date().toISOString().split('T')[0],
+        entry_type = 'ADJUSTMENT',
+        adjustment_type = 'DEBIT',
+        amount,
+        description
+      } = body.data;
+
+      const numAmount = Number(amount);
+      if (!numAmount || numAmount <= 0) {
+        return NextResponse.json({ success: false, error: 'Amount must be greater than 0' }, { status: 400 });
+      }
+
+      const id = randomUUID();
+      const debit = adjustment_type === 'DEBIT' ? numAmount : 0;
+      const credit = adjustment_type === 'CREDIT' ? numAmount : 0;
+
+      await pool.query(`
+        INSERT INTO ledger_entries (
+          id, entry_date, party_type, party_id, source_type, source_id, entry_type, description, debit, credit
+        ) VALUES ($1, $2, $3, $4, 'ADJUSTMENT', $5, $6, $7, $8, $9)
+      `, [
+        id,
+        entry_date,
+        party_type.toUpperCase(),
+        party_id,
+        id,
+        entry_type.toUpperCase(),
+        description.trim(),
+        debit,
+        credit
+      ]);
+
+      return NextResponse.json({ success: true, id });
+    }
+
+    // 13.2 DELETE MANUAL LEDGER ENTRY
+    if (action === 'DELETE_ENTRY' || action === 'DELETE_ADJUSTMENT') {
+      const { id } = body.data;
+      await pool.query("DELETE FROM ledger_entries WHERE id = $1 AND source_type = 'ADJUSTMENT'", [id]);
+      return NextResponse.json({ success: true, id });
+    }
+
     // 14. CLEAR ALL DATA
     if (action === 'CLEAR_DATA') {
       const client = await pool.connect();
@@ -609,6 +813,189 @@ export async function POST(req: Request) {
       } finally {
         client.release();
       }
+    }
+
+    // 14. ADD NEW COMPANY
+    if (action === 'ADD_COMPANY') {
+      const {
+        name,
+        short_name,
+        tagline,
+        est_year,
+        gstin,
+        phone,
+        email,
+        address,
+        website,
+        authorized_signatory,
+        statement_title,
+        statement_subtitle,
+        terms_notes,
+        set_as_active
+      } = body.data;
+
+      const newId = randomUUID();
+
+      if (set_as_active) {
+        await pool.query('UPDATE company_profile SET is_default = 0');
+      }
+
+      const insertRes = await pool.query(
+        `INSERT INTO company_profile (
+          id, name, short_name, tagline, est_year, gstin, phone, email, address, website,
+          authorized_signatory, statement_title, statement_subtitle, terms_notes, is_active, is_default, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1, $15, NOW(), NOW()
+        ) RETURNING *`,
+        [
+          newId,
+          name || 'NEW COMPANY ENTITY',
+          short_name || 'NC',
+          tagline || '',
+          est_year || '',
+          gstin || '',
+          phone || '',
+          email || '',
+          address || '',
+          website || '',
+          authorized_signatory || `FOR ${name || 'NEW COMPANY'}`,
+          statement_title || 'STATEMENT OF SUBLEDGER ACCOUNT',
+          statement_subtitle || 'Double-Entry Verified & Reconciled',
+          terms_notes || '',
+          set_as_active ? 1 : 0
+        ]
+      );
+
+      return NextResponse.json({
+        success: true,
+        company: insertRes.rows[0],
+        message: 'New company entity added successfully'
+      });
+    }
+
+    // 15. UPDATE COMPANY PROFILE (CRUD EDIT)
+    if (action === 'UPDATE_COMPANY_PROFILE') {
+      const {
+        id,
+        name,
+        short_name,
+        tagline,
+        est_year,
+        gstin,
+        phone,
+        email,
+        address,
+        website,
+        authorized_signatory,
+        statement_title,
+        statement_subtitle,
+        terms_notes,
+        is_default
+      } = body.data;
+
+      const targetId = id || 'default';
+
+      if (is_default === 1) {
+        await pool.query('UPDATE company_profile SET is_default = 0 WHERE id != $1', [targetId]);
+      }
+
+      const updateRes = await pool.query(
+        `INSERT INTO company_profile (
+          id, name, short_name, tagline, est_year, gstin, phone, email, address, website,
+          authorized_signatory, statement_title, statement_subtitle, terms_notes, is_active, is_default, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 1, $15, NOW()
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          short_name = EXCLUDED.short_name,
+          tagline = EXCLUDED.tagline,
+          est_year = EXCLUDED.est_year,
+          gstin = EXCLUDED.gstin,
+          phone = EXCLUDED.phone,
+          email = EXCLUDED.email,
+          address = EXCLUDED.address,
+          website = EXCLUDED.website,
+          authorized_signatory = EXCLUDED.authorized_signatory,
+          statement_title = EXCLUDED.statement_title,
+          statement_subtitle = EXCLUDED.statement_subtitle,
+          terms_notes = EXCLUDED.terms_notes,
+          is_default = CASE WHEN $15 = 1 THEN 1 ELSE company_profile.is_default END,
+          updated_at = NOW()
+        RETURNING *`,
+        [
+          targetId,
+          name || 'RR CONSTRUCTION',
+          short_name || 'RR',
+          tagline || '',
+          est_year || '',
+          gstin || '',
+          phone || '',
+          email || '',
+          address || '',
+          website || '',
+          authorized_signatory || 'FOR RR CONSTRUCTION',
+          statement_title || 'STATEMENT OF SUBLEDGER ACCOUNT',
+          statement_subtitle || 'Double-Entry Verified & Reconciled',
+          terms_notes || '',
+          is_default === 1 ? 1 : 0
+        ]
+      );
+
+      return NextResponse.json({
+        success: true,
+        companyProfile: updateRes.rows[0],
+        message: 'Company profile updated successfully'
+      });
+    }
+
+    // 16. DELETE COMPANY PROFILE (CRUD DELETE)
+    if (action === 'DELETE_COMPANY') {
+      const { id } = body.data;
+      if (!id) {
+        return NextResponse.json({ success: false, error: 'Company ID is required' }, { status: 400 });
+      }
+
+      const countRes = await pool.query('SELECT COUNT(*)::INT as total FROM company_profile');
+      if (countRes.rows[0].total <= 1) {
+        return NextResponse.json({ success: false, error: 'At least one company profile must be retained.' }, { status: 400 });
+      }
+
+      const toDeleteRes = await pool.query('SELECT is_default FROM company_profile WHERE id = $1', [id]);
+      const wasDefault = toDeleteRes.rows[0]?.is_default === 1;
+
+      await pool.query('DELETE FROM company_profile WHERE id = $1', [id]);
+
+      // If the default one was deleted, make the first remaining one default
+      if (wasDefault) {
+        await pool.query(`
+          UPDATE company_profile
+          SET is_default = 1
+          WHERE id = (SELECT id FROM company_profile ORDER BY created_at ASC LIMIT 1)
+        `);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Company entity deleted successfully'
+      });
+    }
+
+    // 17. SET ACTIVE COMPANY
+    if (action === 'SET_ACTIVE_COMPANY') {
+      const { id } = body.data;
+      if (!id) {
+        return NextResponse.json({ success: false, error: 'Company ID is required' }, { status: 400 });
+      }
+
+      await pool.query('UPDATE company_profile SET is_default = 0');
+      const activeRes = await pool.query('UPDATE company_profile SET is_default = 1, updated_at = NOW() WHERE id = $1 RETURNING *', [id]);
+
+      return NextResponse.json({
+        success: true,
+        companyProfile: activeRes.rows[0],
+        message: 'Active company profile switched successfully'
+      });
     }
 
     return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });

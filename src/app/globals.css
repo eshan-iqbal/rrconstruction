@@ -511,23 +511,127 @@ input:focus, textarea:focus {
   scrollbar-width: none;
 }
 
-/* Print Styles for Ledger Statements */
+/* Print Styles for Executive Subledger Statements & Invoices */
 @media print {
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-    font-family: sans-serif !important;
+  @page {
+    margin: 8mm 8mm 10mm 8mm;
+    size: auto;
   }
-  .no-print {
+
+  *, *::before, *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  aside, header, nav, .no-print, [role="dialog"], button:not(.print-include) {
     display: none !important;
   }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
   .print-only {
     display: block !important;
   }
+
   .card-print {
-    border: 1px solid #000000 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .card-print table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  .card-print thead th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 8px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-size: 9.5px !important;
+  }
+
+  .card-print tbody td {
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .card-print tbody tr {
+    page-break-inside: avoid !important;
+  }
+
+  .card-print h1, .card-print h2, .card-print h3, .card-print strong {
+    color: #0f172a !important;
+  }
+
+  .card-print .bg-zinc-950,
+  .card-print .bg-zinc-900,
+  .card-print .bg-zinc-850 {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+
+  .card-print .text-white,
+  .card-print .text-zinc-100,
+  .card-print .text-zinc-200,
+  .card-print .text-zinc-300,
+  .card-print .text-zinc-400 {
+    color: #1e293b !important;
+  }
+
+  .card-print .text-zinc-500,
+  .card-print .text-zinc-600 {
+    color: #64748b !important;
+  }
+
+  .card-print .text-amber-400 {
+    color: #b45309 !important;
+    font-weight: 700 !important;
+  }
+
+  .card-print .badge-print {
+    border: 1px solid #64748b !important;
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    padding: 3px 6px !important;
+  }
+
+  .card-print .border-t-2 {
+    border-top: 2px solid #0f172a !important;
+  }
+
+  .card-print .border-b-2 {
+    border-bottom: 3px double #0f172a !important;
   }
 }
+
+

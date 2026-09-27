@@ -29,6 +29,23 @@ export interface Worker {
   phone: string | null;
   skill: string;
   default_wage: number;
+  aadhaar_number?: string | null;
+  pan_number?: string | null;
+  voter_id?: string | null;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_ifsc?: string | null;
+  upi_id?: string | null;
+  father_name?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  permanent_address?: string | null;
+  local_address?: string | null;
+  gender?: string | null;
+  blood_group?: string | null;
+  date_of_birth?: string | null;
+  joining_date?: string | null;
+  notes?: string | null;
   is_active: number;
   created_at: string;
 }
@@ -106,7 +123,49 @@ export interface MultiWorkerItem {
   notes?: string;
 }
 
+export interface CompanyProfile {
+  id: string;
+  name: string;
+  short_name: string;
+  tagline: string;
+  est_year: string;
+  gstin: string;
+  phone: string;
+  email: string;
+  address: string;
+  website: string;
+  authorized_signatory: string;
+  statement_title: string;
+  statement_subtitle: string;
+  terms_notes: string;
+  is_active?: number;
+  is_default?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const DEFAULT_COMPANY_PROFILE: CompanyProfile = {
+  id: 'default',
+  name: 'RR CONSTRUCTION',
+  short_name: 'RR',
+  tagline: 'Labour Suppliers & Civil Infrastructure Contractors',
+  est_year: 'EST. 2018',
+  gstin: '07AABCR8892F1Z4',
+  phone: '+91 98765 43210',
+  email: 'accounts@rrconstruction.in',
+  address: 'Civil Lines, Sector 62, Noida, Delhi NCR - 201301',
+  website: 'https://rrconstruction.in',
+  authorized_signatory: 'FOR RR CONSTRUCTION',
+  statement_title: 'STATEMENT OF SUBLEDGER ACCOUNT',
+  statement_subtitle: 'Double-Entry Verified & Reconciled',
+  terms_notes: 'Certified official subledger statement issued by RR Construction. Verified under double-entry accounting rules.',
+  is_active: 1,
+  is_default: 1
+};
+
 export function useSqlStore() {
+  const [companies, setCompanies] = useState<CompanyProfile[]>([DEFAULT_COMPANY_PROFILE]);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile>(DEFAULT_COMPANY_PROFILE);
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
@@ -129,6 +188,8 @@ export function useSqlStore() {
       const res = await fetch('/api/data', { cache: 'no-store' });
       const json = await res.json();
       if (json.success) {
+        if (json.companies) setCompanies(json.companies);
+        if (json.companyProfile) setCompanyProfile(json.companyProfile);
         setDealers(json.dealers || []);
         setSites(json.sites || []);
         setWorkers(json.workers || []);
@@ -162,7 +223,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'ADD_DEALER', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to add dealer');
+    await refresh();
     return json;
   };
 
@@ -173,18 +235,42 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'ADD_SITE', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to add site');
+    await refresh();
     return json;
   };
 
-  const addWorker = async (data: { name: string; phone?: string; skill?: string; default_wage?: number }) => {
+  const addWorker = async (data: {
+    name: string;
+    phone?: string;
+    skill?: string;
+    default_wage?: number;
+    aadhaar_number?: string;
+    pan_number?: string;
+    voter_id?: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    bank_ifsc?: string;
+    upi_id?: string;
+    father_name?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
+    permanent_address?: string;
+    local_address?: string;
+    gender?: string;
+    blood_group?: string;
+    date_of_birth?: string;
+    joining_date?: string;
+    notes?: string;
+  }) => {
     const res = await fetch('/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'ADD_WORKER', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to add worker');
+    await refresh();
     return json;
   };
 
@@ -204,7 +290,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'SEND_WORKER', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to allocate worker');
+    await refresh();
     return json;
   };
 
@@ -221,7 +308,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'SEND_MULTI_WORKERS', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to allocate workers');
+    await refresh();
     return json;
   };
 
@@ -241,7 +329,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'RECORD_PAYMENT', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to record payment');
+    await refresh();
     return json;
   };
 
@@ -252,7 +341,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'EDIT_DEALER', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to edit dealer');
+    await refresh();
     return json;
   };
 
@@ -263,18 +353,44 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'DELETE_DEALER', data: { id } })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to delete dealer');
+    await refresh();
     return json;
   };
 
-  const editWorker = async (data: { id: string; name: string; phone?: string; skill: string; default_wage?: number; is_active?: number }) => {
+  const editWorker = async (data: {
+    id: string;
+    name: string;
+    phone?: string;
+    skill: string;
+    default_wage?: number;
+    is_active?: number;
+    aadhaar_number?: string;
+    pan_number?: string;
+    voter_id?: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    bank_ifsc?: string;
+    upi_id?: string;
+    father_name?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
+    permanent_address?: string;
+    local_address?: string;
+    gender?: string;
+    blood_group?: string;
+    date_of_birth?: string;
+    joining_date?: string;
+    notes?: string;
+  }) => {
     const res = await fetch('/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'EDIT_WORKER', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to edit worker');
+    await refresh();
     return json;
   };
 
@@ -285,7 +401,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'DELETE_WORKER', data: { id } })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to delete worker');
+    await refresh();
     return json;
   };
 
@@ -304,7 +421,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'EDIT_ALLOCATION', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to edit allocation');
+    await refresh();
     return json;
   };
 
@@ -315,7 +433,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'DELETE_ALLOCATION', data: { id } })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to delete allocation');
+    await refresh();
     return json;
   };
 
@@ -333,7 +452,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'EDIT_PAYMENT', data })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to edit payment');
+    await refresh();
     return json;
   };
 
@@ -344,7 +464,59 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'DELETE_PAYMENT', data: { id } })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to delete payment');
+    await refresh();
+    return json;
+  };
+
+  const addLedgerAdjustment = async (data: {
+    party_type: 'DEALER' | 'WORKER';
+    party_id: string;
+    entry_date?: string;
+    entry_type?: string;
+    adjustment_type: 'DEBIT' | 'CREDIT';
+    amount: number;
+    description: string;
+  }) => {
+    const res = await fetch('/api/ledger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ADD_ADJUSTMENT', data })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to add adjustment');
+    await refresh();
+    return json;
+  };
+
+  const editLedgerAdjustment = async (data: {
+    id: string;
+    entry_date: string;
+    entry_type?: string;
+    adjustment_type: 'DEBIT' | 'CREDIT';
+    amount: number;
+    description: string;
+  }) => {
+    const res = await fetch('/api/ledger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'EDIT_ADJUSTMENT', data })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to edit adjustment');
+    await refresh();
+    return json;
+  };
+
+  const deleteLedgerEntry = async (id: string) => {
+    const res = await fetch('/api/ledger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'DELETE_ENTRY', data: { id } })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to delete ledger entry');
+    await refresh();
     return json;
   };
 
@@ -355,7 +527,8 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'CLEAR_DATA' })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to clear data');
+    await refresh();
     return json;
   };
 
@@ -366,11 +539,75 @@ export function useSqlStore() {
       body: JSON.stringify({ action: 'SEED_CLEAN_SAMPLES' })
     });
     const json = await res.json();
-    if (json.success) await refresh();
+    if (!json.success) throw new Error(json.error || 'Failed to seed sample data');
+    await refresh();
+    return json;
+  };
+
+  const addCompany = async (data: Partial<CompanyProfile> & { set_as_active?: boolean }) => {
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ADD_COMPANY', data })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to add company');
+    await refresh();
+    return json;
+  };
+
+  const updateCompanyProfile = async (data: Partial<CompanyProfile>) => {
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'UPDATE_COMPANY_PROFILE', data })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to update company profile');
+    if (json.companyProfile) {
+      setCompanyProfile(json.companyProfile);
+    }
+    await refresh();
+    return json;
+  };
+
+  const editCompany = updateCompanyProfile;
+
+  const deleteCompany = async (id: string) => {
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'DELETE_COMPANY', data: { id } })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to delete company');
+    await refresh();
+    return json;
+  };
+
+  const setActiveCompany = async (id: string) => {
+    const res = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'SET_ACTIVE_COMPANY', data: { id } })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to switch active company');
+    if (json.companyProfile) {
+      setCompanyProfile(json.companyProfile);
+    }
+    await refresh();
     return json;
   };
 
   return {
+    companies,
+    companyProfile,
+    addCompany,
+    editCompany,
+    deleteCompany,
+    setActiveCompany,
+    updateCompanyProfile,
     dealers,
     sites,
     workers,
@@ -394,6 +631,9 @@ export function useSqlStore() {
     recordPayment,
     editPayment,
     deletePayment,
+    addLedgerAdjustment,
+    editLedgerAdjustment,
+    deleteLedgerEntry,
     clearData,
     seedCleanSamples
   };
