@@ -104,7 +104,7 @@ export async function GET(req: Request) {
           totalDealerReceivable,
           totalWorkerWages,
           totalWorkerPayouts,
-          totalWorkerPayable,
+          totalWorkerPayable, 
           totalWorkerAdvances,
           dealers: dealerSummaries,
           workers: workerSummaries
